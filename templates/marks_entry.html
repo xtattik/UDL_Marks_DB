@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UDL Marks Entry</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; color: #333; }
+        form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"], select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        .full-width { grid-column: 1 / -1; }
+        .score-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 4px; }
+        .score-input { text-align: center; }
+        .score-input input { width: 100%; padding: 10px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
+        button { grid-column: 1 / -1; padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 18px; margin-top: 20px; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Marks Entry Form</h1>
+        <form method="POST" action="{{ url_for('marks_entry') }}">
+            
+            <!-- Student Selection -->
+            <div class="form-group">
+                <label for="student_id">Student</label>
+                <select id="student_id" name="student_id" required>
+                    <option value="">-- Select Student --</option>
+                    {% for student in students %}
+                    <option value="{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Class Selection -->
+            <div class="form-group">
+                <label for="class_id">Class/Subject</label>
+                <select id="class_id" name="class_id" required>
+                    <option value="">-- Select Class --</option>
+                    {% for class_item in classes %}
+                    <option value="{{ class_item.id }}">{{ class_item.class_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Assessment Details -->
+            <div class="form-group full-width">
+                <label for="assessment_title">Assessment Title</label>
+                <input type="text" id="assessment_title" name="assessment_title" required placeholder="e.g., Midterm Exam 1">
+            </div>
+
+            <!-- Outcome Selection -->
+            <div class="form-group">
+                <label for="outcome_id">Outcome (e.g., M4-1)</label>
+                <select id="outcome_id" name="outcome_id" required>
+                    <option value="">-- Select Outcome --</option>
+                    {% for outcome in outcomes %}
+                    <option value="{{ outcome.id }}">{{ outcome.outcome_code }} - {{ outcome.description }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Scoring Details (Sections 1-6) -->
+            <div class="full-width">
+                <h2>Section Scores (0-100)</h2>
+                <div class="score-grid">
+                    {% for i in range(1, 7) %}
+                    <div class="score-input">
+                        <label for="s{{ i }}">Section {{ i }}</label>
+                        <input type="number" id="s{{ i }}" name="s{{ i }}" min="0" max="100" required value="0">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit">Save Marks</button>
+        </form>
+    </div>
+</body>
+</html>

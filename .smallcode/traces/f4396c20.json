@@ -1,0 +1,13 @@
+{
+  "id": "f4396c20",
+  "model": "gemma-4-E4B-it-Q6_K_L",
+  "prompt": "are you still going or are you paused?",
+  "startedAt": "2026-05-20T12:17:01.097Z",
+  "steps": [],
+  "tokens": {
+    "prompt": 5456,
+    "completion": 253
+  },
+  "endedAt": "2026-05-20T12:18:11.475Z",
+  "durationMs": 70378
+}

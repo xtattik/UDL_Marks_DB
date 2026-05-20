@@ -1,0 +1,13 @@
+{
+  "id": "041a3319",
+  "model": "gemma-4-E4B-it-Q6_K_L",
+  "prompt": "i got the following error warning: Defaulting to user installation because normal site-packages is not writeableWARNING: Cache entry deserialization failed, entry ignoredCollecting Flask (from -r requirements.txt (line 1))  Using cached flask-3.1.3-py3-none-any.whl.metadata (3.2 kB)ERROR: Could not find a version that satisfies the requirement sqlite3 (from versions: none)ERROR: No matching distribution found for sqlite3",
+  "startedAt": "2026-05-20T12:29:05.039Z",
+  "steps": [],
+  "tokens": {
+    "prompt": 6307,
+    "completion": 366
+  },
+  "endedAt": "2026-05-20T12:29:16.887Z",
+  "durationMs": 11848
+}
