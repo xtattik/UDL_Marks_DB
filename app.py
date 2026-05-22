@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import sqlite3
 import os
 
@@ -46,7 +46,12 @@ def marks_entry():
             student_id = request.form.get('student_id')
             class_id = request.form.get('class_id')
             assessment_title = request.form.get('assessment_title')
-            outcome_id = request.form.get('outcome_id')
+            # Support multiple selected outcomes (outcome_ids[]) or a single outcome_id for backwards compatibility
+            outcome_ids = request.form.getlist('outcome_ids')
+            if not outcome_ids:
+                single = request.form.get('outcome_id')
+                if single:
+                    outcome_ids = [single]
             
             # Scores for sections 1 through 6
             scores = {
@@ -61,24 +66,24 @@ def marks_entry():
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            # 2. Create a new Attempt record
+            # 2. Create a new Attempt record (single attempt for this submission)
             cursor.execute("""
                 INSERT INTO attempts (class_id, student_id, assessment_title, assessment_description, attempt_date)
                 VALUES (?, ?, ?, ?, date('now'))
-            """, (class_id, student_id, assessment_title, "Marks Entry", None))
+            """, (class_id, student_id, assessment_title, "Marks Entry"))
             attempt_id = cursor.lastrowid
 
-            # 3. Link the Attempt to the Outcome
-            cursor.execute("""
-                INSERT INTO attempt_outcomes (attempt_id, outcome_id)
-                VALUES (?, ?)
-            """, (attempt_id, outcome_id))
+            # 3. For each selected outcome, link and store scoring details
+            for oid in outcome_ids:
+                cursor.execute("""
+                    INSERT INTO attempt_outcomes (attempt_id, outcome_id)
+                    VALUES (?, ?)
+                """, (attempt_id, oid))
 
-            # 4. Insert the Scoring Details
-            cursor.execute("""
-                INSERT INTO scoring_detail (attempt_id, outcome_id, section1, section2, section3, section4, section5, section6)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (attempt_id, outcome_id, scores['section1'], scores['section2'], scores['section3'], scores['section4'], scores['section5'], scores['section6']))
+                cursor.execute("""
+                    INSERT INTO scoring_detail (attempt_id, outcome_id, section1, section2, section3, section4, section5, section6)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (attempt_id, oid, scores['section1'], scores['section2'], scores['section3'], scores['section4'], scores['section5'], scores['section6']))
 
             conn.commit()
             return redirect(url_for('index'))
@@ -102,6 +107,24 @@ def marks_entry():
 
     # We need a template file for this to work, which I will create next.
     return render_template('marks_entry.html', students=students, outcomes=outcomes, classes=classes)
+
+
+@app.route('/api/outcomes')
+def api_outcomes():
+    """Simple outcomes search API. Query with `?q=term` to filter by code or description."""
+    q = request.args.get('q', '').strip()
+    conn = get_db_connection()
+    if q:
+        qparam = f"%{q}%"
+        rows = conn.execute("SELECT id, outcome_code, description FROM outcomes WHERE outcome_code LIKE ? OR description LIKE ? LIMIT 50", (qparam, qparam)).fetchall()
+    else:
+        rows = conn.execute("SELECT id, outcome_code, description FROM outcomes LIMIT 200").fetchall()
+    conn.close()
+
+    results = []
+    for r in rows:
+        results.append({'id': r['id'], 'code': r['outcome_code'], 'description': r['description']})
+    return jsonify(results)
 
 if __name__ == '__main__':
     # Run the application

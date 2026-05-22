@@ -18,6 +18,12 @@
         .score-input input { width: 100%; padding: 10px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
         button { grid-column: 1 / -1; padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 18px; margin-top: 20px; }
         button:hover { background-color: #0056b3; }
+        /* Outcome suggestions and tokens */
+        .suggestions { position: absolute; left: 0; right: 0; background: white; border: 1px solid #ccc; max-height: 220px; overflow:auto; z-index: 20; border-radius:4px; }
+        .suggestion-item { padding:8px 10px; cursor:pointer; }
+        .suggestion-item:hover { background:#f0f6ff; }
+        .token { background:#e1f0ff; color:#034c8c; padding:6px 8px; border-radius:999px; display:inline-flex; align-items:center; gap:8px; }
+        .token button { background:transparent; border:none; color:#034c8c; cursor:pointer; font-weight:bold; }
     </style>
 </head>
 <body>
@@ -53,15 +59,13 @@
                 <input type="text" id="assessment_title" name="assessment_title" required placeholder="e.g., Midterm Exam 1">
             </div>
 
-            <!-- Outcome Selection -->
-            <div class="form-group">
-                <label for="outcome_id">Outcome (e.g., M4-1)</label>
-                <select id="outcome_id" name="outcome_id" required>
-                    <option value="">-- Select Outcome --</option>
-                    {% for outcome in outcomes %}
-                    <option value="{{ outcome.id }}">{{ outcome.outcome_code }} - {{ outcome.description }}</option>
-                    {% endfor %}
-                </select>
+            <!-- Outcome Selection (Searchable Multi-Select) -->
+            <div class="form-group" style="position:relative;">
+                <label for="outcome_search">Outcome(s) — search and add (e.g., M4-1)</label>
+                <input type="text" id="outcome_search" placeholder="Type to search outcomes...">
+                <div id="outcome_suggestions" class="suggestions" style="display:none;"></div>
+                <div id="selected_outcomes" style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;"></div>
+                <!-- Hidden inputs for selected outcome ids will be appended here -->
             </div>
 
             <!-- Scoring Details (Sections 1-6) -->
@@ -80,5 +84,92 @@
             <button type="submit">Save Marks</button>
         </form>
     </div>
+    <script>
+        (function(){
+            const search = document.getElementById('outcome_search');
+            const suggestions = document.getElementById('outcome_suggestions');
+            const selectedContainer = document.getElementById('selected_outcomes');
+            const form = document.querySelector('form');
+            let selected = new Map();
+
+            function debounce(fn, wait){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); }; }
+
+            async function fetchSuggestions(q){
+                if (!q) { suggestions.style.display='none'; suggestions.innerHTML=''; return; }
+                try{
+                    const res = await fetch(`/api/outcomes?q=${encodeURIComponent(q)}`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    renderSuggestions(data);
+                }catch(e){ console.error(e); }
+            }
+
+            function renderSuggestions(items){
+                suggestions.innerHTML = '';
+                if (!items || items.length===0){ suggestions.style.display='none'; return; }
+                items.forEach(it => {
+                    if (selected.has(String(it.id))) return; // skip already selected
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = `${it.code} — ${it.description}`;
+                    div.dataset.id = it.id;
+                    div.dataset.code = it.code;
+                    div.dataset.desc = it.description;
+                    div.addEventListener('click', ()=>{ addToken(it.id, it.code, it.description); });
+                    suggestions.appendChild(div);
+                });
+                suggestions.style.display = suggestions.children.length ? 'block' : 'none';
+            }
+
+            function addToken(id, code, desc){
+                const key = String(id);
+                if (selected.has(key)) return;
+                selected.set(key, {code, desc});
+
+                const span = document.createElement('span');
+                span.className = 'token';
+                span.dataset.id = key;
+                span.innerHTML = `<span>${code}</span>`;
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = '×';
+                btn.title = 'Remove';
+                btn.addEventListener('click', ()=>{ removeToken(key); });
+                span.appendChild(btn);
+
+                // hidden input
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'outcome_ids';
+                hidden.value = key;
+                hidden.dataset.for = key;
+
+                selectedContainer.appendChild(span);
+                selectedContainer.appendChild(hidden);
+                // clear suggestions and search box
+                search.value = '';
+                suggestions.style.display='none';
+            }
+
+            function removeToken(key){
+                selected.delete(key);
+                // remove token span and hidden input
+                const span = selectedContainer.querySelector(`.token[data-id="${key}"]`);
+                if (span) span.remove();
+                const hid = selectedContainer.querySelector(`input[type="hidden"][data-for="${key}"]`);
+                if (hid) hid.remove();
+            }
+
+            search.addEventListener('input', debounce(function(e){ fetchSuggestions(e.target.value); }, 250));
+            document.addEventListener('click', (e)=>{ if (!e.target.closest('#outcome_suggestions') && e.target !== search) suggestions.style.display='none'; });
+
+            // Prevent form submit when no outcomes selected
+            form.addEventListener('submit', (e)=>{
+                const any = selectedContainer.querySelector('input[type="hidden"]');
+                if (!any){ e.preventDefault(); alert('Please select at least one Outcome.'); search.focus(); }
+            });
+        })();
+    </script>
 </body>
 </html>
