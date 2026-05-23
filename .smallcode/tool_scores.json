@@ -20,10 +20,10 @@
   "bash:coding": {
     "tool_name": "bash",
     "task_type": "coding",
-    "success_count": 4,
+    "success_count": 7,
     "failure_count": 2,
-    "total_calls": 6,
-    "confidence": 0.625,
+    "total_calls": 9,
+    "confidence": 0.7272727272727273,
     "last_error": "Blocking command detected"
   },
   "read_file:coding": {
@@ -92,10 +92,10 @@
   "read_file:editing": {
     "tool_name": "read_file",
     "task_type": "editing",
-    "success_count": 2,
+    "success_count": 3,
     "failure_count": 1,
-    "total_calls": 3,
-    "confidence": 0.6,
+    "total_calls": 4,
+    "confidence": 0.6666666666666666,
     "last_error": "File not found: UDL_Marks_DM.md (checked: C:\\Users\\Nathan\\OneDrive\\Documents\\Code Projects\\UDL-Marks-databse\\UDL_Marks_DM.md)"
   },
   "write_file:editing": {
@@ -160,5 +160,14 @@
     "total_calls": 5,
     "confidence": 0.5714285714285714,
     "last_error": "write_file: content too large (269 lines / 9KB). llama.cpp cannot parse tool calls larger than ~8KB. Strategy: write a skeleton file first (imports + empty function stubs), then use multiple patch calls to fill in each section. Keep each write_file under 60 lines."
+  },
+  "patch:editing": {
+    "tool_name": "patch",
+    "task_type": "editing",
+    "success_count": 0,
+    "failure_count": 1,
+    "total_calls": 1,
+    "confidence": 0.3333333333333333,
+    "last_error": "old_str not found in UDL_Marks_DB.md"
   }
 }
