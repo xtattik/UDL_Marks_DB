@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Progress - {{ student.first_name }} {{ student.last_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .student-info { margin-bottom: 20px; padding: 15px; background-color: #e9f7ff; border-left: 5px solid #007bff; }
+        .attempt-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 6px; background-color: #fff; }
+        .attempt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .outcome-score { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #eee; }
+        .outcome-score:last-child { border-bottom: none; }
+        .outcome-code { font-weight: bold; color: #555; }
+        .outcome-name { font-size: 0.9em; color: #777; }
+        .score-value { font-weight: bold; color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Progress Report</h1>
+        
+        <div class="student-info">
+            <h2>Student Details</h2>
+            <p><strong>Name:</strong> {{ student.first_name }} {{ student.last_name }}</p>
+            <p><strong>Enrollment Date:</strong> {{ student.enrollment_date }}</p>
+        </div>
+
+        {% for attempt_id, attempt in attempts.items() %}
+        <div class="attempt-card">
+            <div class="attempt-header">
+                <h2>Assessment: {{ attempt.assessment_title }}</h2>
+                <small>Date: {{ attempt.attempt_date }}</small>
+            </div>
+            
+            <h3>Outcomes Achieved:</h3>
+            {% for outcome_code, score, outcome_name in scores[attempt_id] %}
+            <div class="outcome-score">
+                <div>
+                    <span class="outcome-code">{{ outcome_code }}</span>
+                    <span class="outcome-name">({{ outcome_name }})</span>
+                </div>
+                <div class="score-value">{{ score }} / 100</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>No assessment attempts found for this student yet.</p>
+        {% endfor %}
+
+        <p><a href="{{ url_for('index') }}">← Back to Dashboard</a></p>
+    </div>
+</body>
+</html>

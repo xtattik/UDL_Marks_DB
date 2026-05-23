@@ -20,10 +20,10 @@
   "bash:coding": {
     "tool_name": "bash",
     "task_type": "coding",
-    "success_count": 2,
+    "success_count": 4,
     "failure_count": 2,
-    "total_calls": 4,
-    "confidence": 0.5,
+    "total_calls": 6,
+    "confidence": 0.625,
     "last_error": "Blocking command detected"
   },
   "read_file:coding": {
@@ -48,9 +48,9 @@
     "tool_name": "run",
     "task_type": "coding",
     "success_count": 0,
-    "failure_count": 1,
-    "total_calls": 1,
-    "confidence": 0.3333333333333333,
+    "failure_count": 2,
+    "total_calls": 2,
+    "confidence": 0.25,
     "last_error": "Command failed: Exit code 1"
   },
   "write_file:explanation": {
@@ -74,10 +74,10 @@
   "read_file:search": {
     "tool_name": "read_file",
     "task_type": "search",
-    "success_count": 1,
+    "success_count": 3,
     "failure_count": 0,
-    "total_calls": 1,
-    "confidence": 0.6666666666666666,
+    "total_calls": 3,
+    "confidence": 0.8,
     "last_error": null
   },
   "patch:search": {
@@ -115,5 +115,50 @@
     "total_calls": 1,
     "confidence": 0.6666666666666666,
     "last_error": null
+  },
+  "bash:shell": {
+    "tool_name": "bash",
+    "task_type": "shell",
+    "success_count": 1,
+    "failure_count": 0,
+    "total_calls": 1,
+    "confidence": 0.6666666666666666,
+    "last_error": null
+  },
+  "read_file:shell": {
+    "tool_name": "read_file",
+    "task_type": "shell",
+    "success_count": 4,
+    "failure_count": 0,
+    "total_calls": 4,
+    "confidence": 0.8333333333333334,
+    "last_error": null
+  },
+  "patch:shell": {
+    "tool_name": "patch",
+    "task_type": "shell",
+    "success_count": 15,
+    "failure_count": 4,
+    "total_calls": 19,
+    "confidence": 0.7619047619047619,
+    "last_error": "old_str not found in app.py"
+  },
+  "search_and_read:shell": {
+    "tool_name": "search_and_read",
+    "task_type": "shell",
+    "success_count": 2,
+    "failure_count": 0,
+    "total_calls": 2,
+    "confidence": 0.75,
+    "last_error": null
+  },
+  "write_file:shell": {
+    "tool_name": "write_file",
+    "task_type": "shell",
+    "success_count": 3,
+    "failure_count": 2,
+    "total_calls": 5,
+    "confidence": 0.5714285714285714,
+    "last_error": "write_file: content too large (269 lines / 9KB). llama.cpp cannot parse tool calls larger than ~8KB. Strategy: write a skeleton file first (imports + empty function stubs), then use multiple patch calls to fill in each section. Keep each write_file under 60 lines."
   }
 }

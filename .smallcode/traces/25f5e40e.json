@@ -1,0 +1,13 @@
+{
+  "id": "25f5e40e",
+  "model": "gemma4-E4B-Q6",
+  "prompt": "how we going? not sure if you're still thinking or i need to give you a new task",
+  "startedAt": "2026-05-23T08:00:47.844Z",
+  "steps": [],
+  "tokens": {
+    "prompt": 23814,
+    "completion": 299
+  },
+  "endedAt": "2026-05-23T08:02:05.239Z",
+  "durationMs": 77395
+}
