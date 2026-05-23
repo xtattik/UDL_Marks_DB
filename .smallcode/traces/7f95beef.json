@@ -1,0 +1,13 @@
+{
+  "id": "7f95beef",
+  "model": "gemma4-E4B-Q6",
+  "prompt": "hey - how are you doing? can't tell if you're stuck in a loop or progressing well. What's the check-in?",
+  "startedAt": "2026-05-22T23:50:13.264Z",
+  "steps": [],
+  "tokens": {
+    "prompt": 18533,
+    "completion": 195
+  },
+  "endedAt": "2026-05-22T23:50:51.656Z",
+  "durationMs": 38392
+}

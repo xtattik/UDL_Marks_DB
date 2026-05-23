@@ -3,13 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UDL Marks Entry</title>
+    <title>Log Marks - UDL Marks Database</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-        h1 { text-align: center; color: #333; }
-        form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f0f2f5; color: #333; }
+
+        .navbar {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .navbar h1 { font-size: 20px; font-weight: 600; }
+        .navbar nav a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            margin-left: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .navbar nav a:hover, .navbar nav a.active { color: white; }
+
+        .main-content { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .page-header h2 { font-size: 22px; color: #2c3e50; }
+        .back-link {
+            color: #3498db;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        .form-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+        .form-card h3 {
+            font-size: 15px;
+            color: #2c3e50;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
         .form-group { display: flex; flex-direction: column; }
+<<<<<<< Updated upstream
         label { margin-bottom: 5px; font-weight: bold; color: #555; }
         input[type="text"], select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
         .full-width { grid-column: 1 / -1; }
@@ -24,35 +82,216 @@
         .suggestion-item:hover { background:#f0f6ff; }
         .token { background:#e1f0ff; color:#034c8c; padding:6px 8px; border-radius:999px; display:inline-flex; align-items:center; gap:8px; }
         .token button { background:transparent; border:none; color:#034c8c; cursor:pointer; font-weight:bold; }
+=======
+        .form-group.full { grid-column: 1 / -1; }
+        label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+        input[type="text"], textarea, select {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+        }
+        textarea { resize: vertical; min-height: 60px; }
+
+        /* Outcome Selector */
+        .outcome-selector { position: relative; }
+        .outcome-search-input {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 100%;
+        }
+        .outcome-search-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+        }
+        .outcome-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 4px;
+        }
+        .outcome-dropdown.show { display: block; }
+        .outcome-option {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background 0.1s;
+        }
+        .outcome-option:hover { background: #f0f7ff; }
+        .outcome-option:last-child { border-bottom: none; }
+        .outcome-option .code { font-weight: 700; color: #2c3e50; font-size: 13px; }
+        .outcome-option .desc { font-size: 12px; color: #888; margin-top: 2px; }
+        .outcome-option .meta { font-size: 11px; color: #aaa; margin-top: 2px; }
+        .outcome-option.no-results { cursor: default; color: #999; }
+
+        /* Selected Outcome Chips */
+        .selected-outcomes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            min-height: 36px;
+        }
+        .outcome-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #e8f4fd;
+            border: 1px solid #b8d9f0;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #2c5282;
+            font-weight: 500;
+        }
+        .outcome-chip .chip-code { font-weight: 700; }
+        .outcome-chip .remove-chip {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(44,82,130,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #2c5282;
+            transition: background 0.15s;
+        }
+        .outcome-chip .remove-chip:hover { background: rgba(44,82,130,0.3); }
+
+        /* Scoring Blocks */
+        .scoring-section { margin-top: 10px; }
+        .scoring-block {
+            background: #fafbfc;
+            border: 1px solid #e8ecf0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .scoring-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .scoring-block-header .outcome-info .code { font-size: 16px; font-weight: 700; color: #2c3e50; }
+        .scoring-block-header .outcome-info .desc { font-size: 13px; color: #666; margin-top: 4px; }
+        .scoring-block-header .outcome-info .focus-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .focus-badge.theoretical { background: #fef3cd; color: #856404; }
+        .focus-badge.applied { background: #d4edda; color: #155724; }
+        .focus-badge.general { background: #e2e3e5; color: #383d41; }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+        }
+        .section-input { text-align: center; }
+        .section-input label {
+            display: block;
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .section-input input {
+            width: 100%;
+            padding: 10px 4px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .section-input input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+        }
+        .section-input input::-webkit-inner-spin-button { opacity: 0.5; }
+
+        .block-total {
+            text-align: right;
+            margin-top: 12px;
+            font-size: 14px;
+            color: #666;
+        }
+        .block-total span { font-weight: 700; color: #2c3e50; font-size: 16px; }
+
+        .submit-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+        }
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-primary:disabled { background: #b0c4de; cursor: not-allowed; }
+        .btn-secondary { background: #ecf0f1; color: #555; }
+        .btn-secondary:hover { background: #dfe6e9; }
+        .form-hint { font-size: 13px; color: #999; }
+
+        .hidden { display: none !important; }
+>>>>>>> Stashed changes
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Marks Entry Form</h1>
-        <form method="POST" action="{{ url_for('marks_entry') }}">
-            
-            <!-- Student Selection -->
-            <div class="form-group">
-                <label for="student_id">Student</label>
-                <select id="student_id" name="student_id" required>
-                    <option value="">-- Select Student --</option>
-                    {% for student in students %}
-                    <option value="{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+    <div class="navbar">
+        <h1>UDL Marks Database</h1>
+        <nav>
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('marks_entry') }}" class="active">New Entry</a>
+            <a href="{{ url_for('recent_entries') }}">History</a>
+        </nav>
+    </div>
 
-            <!-- Class Selection -->
-            <div class="form-group">
-                <label for="class_id">Class/Subject</label>
-                <select id="class_id" name="class_id" required>
-                    <option value="">-- Select Class --</option>
-                    {% for class_item in classes %}
-                    <option value="{{ class_item.id }}">{{ class_item.class_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+    <div class="main-content">
+        <div class="page-header">
+            <a href="{{ url_for('index') }}" class="back-link">&larr; Back to Dashboard</a>
+            <h2>Log Marks</h2>
+        </div>
 
+<<<<<<< Updated upstream
             <!-- Assessment Details -->
             <div class="form-group full-width">
                 <label for="assessment_title">Assessment Title</label>
@@ -76,14 +315,69 @@
                     <div class="score-input">
                         <label for="s{{ i }}">Section {{ i }}</label>
                         <input type="number" id="s{{ i }}" name="s{{ i }}" min="0" max="100" required value="0">
+=======
+        <form method="POST" action="{{ url_for('marks_entry') }}" id="marksForm">
+            <!-- Context -->
+            <div class="form-card">
+                <h3>&#128100; Assessment Context</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="student_id">Student *</label>
+                        <select id="student_id" name="student_id" required>
+                            <option value="">-- Select Student --</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}">{{ student.first_name }} {{ student.last_name }}</option>
+                            {% endfor %}
+                        </select>
+>>>>>>> Stashed changes
                     </div>
-                    {% endfor %}
+                    <div class="form-group">
+                        <label for="class_id">Class/Subject *</label>
+                        <select id="class_id" name="class_id" required>
+                            <option value="">-- Select Class --</option>
+                            {% for class_item in classes %}
+                            <option value="{{ class_item.id }}">{{ class_item.class_name }}{% if class_item.subject_name %} ({{ class_item.subject_name }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group full">
+                    <label for="assessment_title">Assessment Title *</label>
+                    <input type="text" id="assessment_title" name="assessment_title" required placeholder="e.g., Midterm Exam 1, Lab Report 3">
+                </div>
+                <div class="form-group full">
+                    <label for="assessment_description">Description (optional)</label>
+                    <textarea id="assessment_description" name="assessment_description" placeholder="Brief description of what this assessment covers..."></textarea>
                 </div>
             </div>
 
-            <button type="submit">Save Marks</button>
+            <!-- Outcome Selection -->
+            <div class="form-card">
+                <h3>&#127897; Select Outcomes</h3>
+                <div class="form-group full outcome-selector">
+                    <label>Search outcomes by code or description</label>
+                    <input type="text" class="outcome-search-input" id="outcomeSearch" placeholder="Type to search (e.g., 'SC4', 'hypothesis', 'mathematical')..." autocomplete="off">
+                    <div class="outcome-dropdown" id="outcomeDropdown"></div>
+
+                    <!-- Hidden field for form submission -->
+                    <input type="hidden" name="outcome_ids" id="outcomeIds">
+
+                    <div class="selected-outcomes" id="selectedOutcomes"></div>
+                    <p class="form-hint" style="margin-top: 8px;">Select one or more outcomes. Each will get its own scoring block below.</p>
+                </div>
+            </div>
+
+            <!-- Scoring Blocks (rendered dynamically) -->
+            <div class="scoring-section" id="scoringSection"></div>
+
+            <!-- Submit -->
+            <div class="form-card submit-area">
+                <span class="form-hint" id="formHint">Select at least one outcome and enter scores (0-100) to save.</span>
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Save Assessment</button>
+            </div>
         </form>
     </div>
+<<<<<<< Updated upstream
     <script>
         (function(){
             const search = document.getElementById('outcome_search');
@@ -170,6 +464,191 @@
                 if (!any){ e.preventDefault(); alert('Please select at least one Outcome.'); search.focus(); }
             });
         })();
+=======
+
+    <script>
+    // --- Data from server ---
+    const availableOutcomes = {{ outcomes | tojson }};
+    let selectedOutcomeIds = new Set();
+
+    // --- DOM refs ---
+    const searchInput = document.getElementById('outcomeSearch');
+    const dropdown = document.getElementById('outcomeDropdown');
+    const selectedContainer = document.getElementById('selectedOutcomes');
+    const scoringSection = document.getElementById('scoringSection');
+    const outcomeIdsField = document.getElementById('outcomeIds');
+    const submitBtn = document.getElementById('submitBtn');
+    const formHint = document.getElementById('formHint');
+    const marksForm = document.getElementById('marksForm');
+
+    // --- Search & Dropdown ---
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        let filtered = availableOutcomes;
+
+        if (query) {
+            filtered = availableOutcomes.filter(o =>
+                o.code.toLowerCase().includes(query) ||
+                o.description.toLowerCase().includes(query) ||
+                (o.subject && o.subject.toLowerCase().includes(query)) ||
+                (o.focus_type && o.focus_type.toLowerCase().includes(query))
+            );
+        }
+
+        renderDropdown(filtered, query);
+    });
+
+    searchInput.addEventListener('focus', function() {
+        const query = this.value.toLowerCase().trim();
+        let filtered = availableOutcomes;
+        if (query) {
+            filtered = availableOutcomes.filter(o =>
+                o.code.toLowerCase().includes(query) ||
+                o.description.toLowerCase().includes(query)
+            );
+        }
+        renderDropdown(filtered, query);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.outcome-selector')) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    function renderDropdown(outcomes, query) {
+        if (outcomes.length === 0) {
+            dropdown.innerHTML = '<div class="outcome-option no-results">No outcomes found</div>';
+            dropdown.classList.add('show');
+            return;
+        }
+
+        dropdown.innerHTML = outcomes.map(o => {
+            const isSelected = selectedOutcomeIds.has(o.id);
+            if (isSelected) return '';
+            return `<div class="outcome-option" data-id="${o.id}" data-code="${o.code}" data-desc="${escapeHtml(o.description)}" data-focus="${o.focus_type || 'general'}" data-subject="${o.subject || ''}">
+                <div class="code">${escapeHtml(o.code)}</div>
+                <div class="desc">${highlightMatch(escapeHtml(o.description), query)}</div>
+                <div class="meta">${o.focus_type ? o.focus_type + ' &middot; ' : ''}${o.subject || ''}</div>
+            </div>`;
+        }).join('');
+
+        dropdown.querySelectorAll('.outcome-option:not(.no-results)').forEach(opt => {
+            opt.addEventListener('click', function() {
+                addOutcome(this);
+            });
+        });
+
+        dropdown.classList.add('show');
+    }
+
+    function highlightMatch(text, query) {
+        if (!query) return text;
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<strong>$1</strong>');
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // --- Add/Remove Outcomes ---
+    function addOutcome(el) {
+        const id = parseInt(el.dataset.id);
+        if (selectedOutcomeIds.has(id)) return;
+
+        selectedOutcomeIds.add(id);
+        updateSelectedDisplay();
+        renderScoringBlocks();
+        dropdown.classList.remove('show');
+        searchInput.value = '';
+        searchInput.focus();
+    }
+
+    function removeOutcome(id) {
+        selectedOutcomeIds.delete(id);
+        updateSelectedDisplay();
+        renderScoringBlocks();
+    }
+
+    function updateSelectedDisplay() {
+        const selected = availableOutcomes.filter(o => selectedOutcomeIds.has(o.id));
+        selectedContainer.innerHTML = selected.map(o => `
+            <div class="outcome-chip" data-id="${o.id}">
+                <span class="chip-code">${escapeHtml(o.code)}</span>
+                <span>${escapeHtml(o.description).substring(0, 40)}${o.description.length > 40 ? '...' : ''}</span>
+                <span class="remove-chip" onclick="removeOutcome(${o.id})">&times;</span>
+            </div>
+        `).join('');
+
+        outcomeIdsField.value = Array.from(selectedOutcomeIds).join(',');
+        submitBtn.disabled = selectedOutcomeIds.size === 0;
+        formHint.textContent = selectedOutcomeIds.size > 0
+            ? `${selectedOutcomeIds.size} outcome(s) selected — enter scores below.`
+            : 'Select at least one outcome and enter scores (0-100) to save.';
+    }
+
+    // --- Scoring Blocks ---
+    function renderScoringBlocks() {
+        const selected = availableOutcomes.filter(o => selectedOutcomeIds.has(o.id));
+        scoringSection.innerHTML = selected.map(o => `
+            <div class="scoring-block" data-outcome-id="${o.id}">
+                <div class="scoring-block-header">
+                    <div class="outcome-info">
+                        <div class="code">${escapeHtml(o.code)}</div>
+                        <div class="desc">${escapeHtml(o.description)}</div>
+                        <span class="focus-badge ${getFocusClass(o.focus_type)}">${escapeHtml(o.focus_type || 'General')}</span>
+                    </div>
+                </div>
+                <div class="section-grid">
+                    ${[1,2,3,4,5,6].map(i => `
+                        <div class="section-input">
+                            <label for="s_${o.id}_${i}">Section ${i}</label>
+                            <input type="number" id="s_${o.id}_${i}" name="s_${o.id}_${i}" min="0" max="100" value="0" data-outcome="${o.id}" data-section="${i}">
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="block-total">
+                    Total: <span class="block-total-value" data-outcome="${o.id}">0</span> / 600
+                </div>
+            </div>
+        `).join('');
+
+        // Attach listeners for auto-calc
+        scoringSection.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', function() {
+                calcBlockTotal(this.dataset.outcome);
+            });
+        });
+    }
+
+    function calcBlockTotal(outcomeId) {
+        let total = 0;
+        scoringSection.querySelectorAll(`input[data-outcome="${outcomeId}"]`).forEach(input => {
+            const val = parseInt(input.value) || 0;
+            if (val > 100) input.value = 100;
+            if (val < 0) input.value = 0;
+            total += parseInt(input.value) || 0;
+        });
+        scoringSection.querySelector(`.block-total-value[data-outcome="${outcomeId}"]`).textContent = total;
+    }
+
+    function getFocusClass(type) {
+        if (!type) return 'general';
+        return type.toLowerCase().includes('theoretical') ? 'theoretical' : 'applied';
+    }
+
+    // --- Form submission guard ---
+    marksForm.addEventListener('submit', function(e) {
+        if (selectedOutcomeIds.size === 0) {
+            e.preventDefault();
+            alert('Please select at least one outcome.');
+            return false;
+        }
+    });
+>>>>>>> Stashed changes
     </script>
 </body>
 </html>

@@ -1,0 +1,13 @@
+{
+  "id": "3ffa847a",
+  "model": "gemma4-E4B-Q6",
+  "prompt": "ok - taht didn't get very far - can yous ee which directory youa re currently in?",
+  "startedAt": "2026-05-21T12:14:26.868Z",
+  "steps": [],
+  "tokens": {
+    "prompt": 220,
+    "completion": 81
+  },
+  "endedAt": "2026-05-21T12:14:43.963Z",
+  "durationMs": 17095
+}

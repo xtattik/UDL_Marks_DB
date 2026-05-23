@@ -1,0 +1,13 @@
+{
+  "id": "e115dcc1",
+  "model": "gemma4-E4B-Q6",
+  "prompt": "try that again - hopefully the server doesn't crash this time",
+  "startedAt": "2026-05-21T12:16:39.501Z",
+  "steps": [],
+  "tokens": {
+    "prompt": 371,
+    "completion": 141
+  },
+  "endedAt": "2026-05-21T12:17:07.087Z",
+  "durationMs": 27586
+}

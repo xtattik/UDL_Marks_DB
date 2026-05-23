@@ -1,0 +1,13 @@
+{
+  "id": "8c5c52a4",
+  "model": "gemma4-E4B-Q6",
+  "prompt": "ok - mightg try again without the thinking flag. You good?",
+  "startedAt": "2026-05-22T23:52:07.886Z",
+  "steps": [],
+  "tokens": {
+    "prompt": 75056,
+    "completion": 917
+  },
+  "endedAt": "2026-05-22T23:53:52.159Z",
+  "durationMs": 104273
+}

@@ -29,10 +29,10 @@
   "read_file:coding": {
     "tool_name": "read_file",
     "task_type": "coding",
-    "success_count": 3,
+    "success_count": 4,
     "failure_count": 1,
-    "total_calls": 4,
-    "confidence": 0.6666666666666666,
+    "total_calls": 5,
+    "confidence": 0.7142857142857143,
     "last_error": "File not found: UDL_Marks_DB (checked: C:\\Users\\Nathan\\OneDrive\\Documents\\Code Projects\\UDL-Marks-databse\\UDL_Marks_DB)"
   },
   "write_file:coding": {
@@ -92,14 +92,23 @@
   "read_file:editing": {
     "tool_name": "read_file",
     "task_type": "editing",
-    "success_count": 0,
+    "success_count": 2,
     "failure_count": 1,
-    "total_calls": 1,
-    "confidence": 0.3333333333333333,
+    "total_calls": 3,
+    "confidence": 0.6,
     "last_error": "File not found: UDL_Marks_DM.md (checked: C:\\Users\\Nathan\\OneDrive\\Documents\\Code Projects\\UDL-Marks-databse\\UDL_Marks_DM.md)"
   },
   "write_file:editing": {
     "tool_name": "write_file",
+    "task_type": "editing",
+    "success_count": 1,
+    "failure_count": 0,
+    "total_calls": 1,
+    "confidence": 0.6666666666666666,
+    "last_error": null
+  },
+  "bash:editing": {
+    "tool_name": "bash",
     "task_type": "editing",
     "success_count": 1,
     "failure_count": 0,
