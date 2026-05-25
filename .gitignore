@@ -1,0 +1,8 @@
+*.sqlite
+*.sqlite-backup
+*_backup.sqlite
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env

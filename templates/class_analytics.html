@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ class_info.class_name }} — Class Analytics</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; }
+
+        .navbar {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white; padding: 0 30px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 60px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .navbar h1 { font-size: 20px; font-weight: 600; }
+        .navbar nav a {
+            color: rgba(255,255,255,0.8); text-decoration: none;
+            margin-left: 24px; font-size: 14px; font-weight: 500;
+        }
+        .navbar nav a:hover { color: white; }
+
+        .layout { display: flex; gap: 24px; max-width: 1300px; margin: 30px auto; padding: 0 20px; }
+
+        /* Sidebar */
+        .sidebar { width: 220px; flex-shrink: 0; }
+        .sidebar-card {
+            background: white; border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            overflow: hidden; position: sticky; top: 20px;
+        }
+        .sidebar-card h3 {
+            padding: 14px 16px; font-size: 13px; font-weight: 600;
+            color: #555; background: #fafafa; border-bottom: 1px solid #eee;
+            text-transform: uppercase; letter-spacing: 0.4px;
+        }
+        .sidebar-link {
+            display: block; padding: 11px 16px;
+            font-size: 13px; color: #555; text-decoration: none;
+            border-bottom: 1px solid #f5f5f5; transition: background 0.1s;
+        }
+        .sidebar-link:last-child { border-bottom: none; }
+        .sidebar-link:hover { background: #f0f7ff; color: #3498db; }
+        .sidebar-link.active { background: #e8f4fd; color: #2c5282; font-weight: 600; }
+
+        /* Main */
+        .main { flex: 1; min-width: 0; }
+
+        .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .page-header h2 { font-size: 22px; color: #2c3e50; }
+        .back-link { color: #3498db; text-decoration: none; font-size: 14px; font-weight: 500; }
+        .back-link:hover { text-decoration: underline; }
+
+        /* Legend */
+        .legend {
+            display: flex; align-items: center; gap: 12px;
+            background: white; border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            padding: 14px 20px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .legend span { font-size: 13px; color: #555; font-weight: 500; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #555; }
+        .swatch { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; }
+        .sw-beyond     { background: #dbeafe; border: 1px solid #93c5fd; }
+        .sw-well-above { background: #d1fae5; border: 1px solid #6ee7b7; }
+        .sw-above      { background: #dcfce7; border: 1px solid #86efac; }
+        .sw-standard   { background: #fef9c3; border: 1px solid #fde047; }
+        .sw-working    { background: #ffedd5; border: 1px solid #fdba74; }
+        .sw-limited    { background: #fee2e2; border: 1px solid #fca5a5; }
+        .sw-none       { background: #f3f4f6; border: 1px solid #d1d5db; }
+
+        /* Heatmap table wrapper */
+        .heatmap-wrap {
+            background: white; border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            overflow-x: auto; margin-bottom: 20px;
+        }
+        .heatmap-wrap table { width: 100%; border-collapse: collapse; }
+
+        /* Outcome column header */
+        th.outcome-col {
+            writing-mode: vertical-rl; transform: rotate(180deg);
+            height: 110px; white-space: nowrap; text-align: left;
+            padding: 8px 6px; font-size: 11px; font-weight: 600;
+            color: #555; background: #fafafa; border-bottom: 2px solid #e0e0e0;
+            border-right: 1px solid #f0f0f0; vertical-align: bottom;
+            min-width: 46px;
+        }
+        th.row-label-header {
+            padding: 12px 16px; font-size: 11px; text-transform: uppercase;
+            letter-spacing: 0.5px; color: #888; background: #fafafa;
+            border-bottom: 2px solid #e0e0e0; white-space: nowrap;
+        }
+
+        /* Rows */
+        td.row-label {
+            padding: 10px 16px; font-size: 13px; font-weight: 600; color: #2c3e50;
+            white-space: nowrap; border-right: 2px solid #e8e8e8;
+            border-bottom: 1px solid #f5f5f5; background: white;
+            position: sticky; left: 0; z-index: 1;
+        }
+        tr:hover td.row-label { background: #f8f9ff; }
+
+        td.heat-cell {
+            text-align: center; padding: 6px 4px; border-right: 1px solid #f5f5f5;
+            border-bottom: 1px solid #f5f5f5; font-size: 12px; font-weight: 600;
+            min-width: 46px;
+        }
+        .band-beyond     { background: #dbeafe; color: #1e40af; }
+        .band-well-above { background: #d1fae5; color: #065f46; }
+        .band-above      { background: #dcfce7; color: #166534; }
+        .band-standard   { background: #fef9c3; color: #854d0e; }
+        .band-working    { background: #ffedd5; color: #9a3412; }
+        .band-limited    { background: #fee2e2; color: #991b1b; }
+        .band-none       { background: #f3f4f6; color: #d1d5db; }
+
+        /* Average row */
+        tr.avg-row td { background: #f0f4f8; font-size: 11px; font-weight: 700; }
+        tr.avg-row td.row-label { color: #666; font-style: italic; }
+
+        /* No data */
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: #999;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>UDL Marks Database</h1>
+        <nav>
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('marks_entry') }}">New Entry</a>
+            <a href="{{ url_for('recent_entries') }}">History</a>
+            <a href="{{ url_for('analytics') }}">Analytics</a>
+        </nav>
+    </div>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-card">
+                <h3>Classes</h3>
+                {% for cls in all_classes %}
+                <a href="{{ url_for('class_analytics', class_id=cls.class_id) }}"
+                   class="sidebar-link {% if cls.class_id == class_info.class_id %}active{% endif %}">
+                    {{ cls.class_name }}
+                </a>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <div class="main">
+            <div class="page-header">
+                <a href="{{ url_for('analytics') }}" class="back-link">&larr; Analytics</a>
+                <h2>{{ class_info.class_name }}</h2>
+            </div>
+
+            <div class="legend">
+                <span>Avg / {{ max_score }}</span>
+                <div class="legend-item"><div class="swatch sw-beyond"></div> 16 Beyond Stage</div>
+                <div class="legend-item"><div class="swatch sw-well-above"></div> 13–15 Well Above</div>
+                <div class="legend-item"><div class="swatch sw-above"></div> 10–12 Above Standard</div>
+                <div class="legend-item"><div class="swatch sw-standard"></div> 7–9 At Standard</div>
+                <div class="legend-item"><div class="swatch sw-working"></div> 4–6 Working Towards</div>
+                <div class="legend-item"><div class="swatch sw-limited"></div> 1–3 Limited</div>
+                <div class="legend-item"><div class="swatch sw-none"></div> No data</div>
+            </div>
+
+            {% if students and outcomes %}
+            <div class="heatmap-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="row-label-header">Student</th>
+                            {% for oid, (code, name) in outcomes %}
+                            <th class="outcome-col" title="{{ name }}">{{ code }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sid, sname in students %}
+                        <tr>
+                            <td class="row-label">
+                                <a href="{{ url_for('student_progress', student_id=sid) }}"
+                                   style="color:inherit;text-decoration:none;">
+                                    {{ sname }}
+                                </a>
+                            </td>
+                            {% for oid, (code, name) in outcomes %}
+                            {% set cell = grid.get((sid, oid)) %}
+                            {% if cell %}
+                                {% set avg, cnt, band_css = cell %}
+                                <td class="heat-cell {{ band_css }}" title="{{ sname }} · {{ code }}: {{ avg }}/{{ max_score }} ({{ cnt }} attempt{{ 's' if cnt != 1 }})">
+                                    {{ avg }}
+                                </td>
+                            {% else %}
+                                <td class="heat-cell band-none" title="{{ sname }} · {{ code }}: no data">—</td>
+                            {% endif %}
+                        {% endfor %}
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Class average row -->
+                        {% if outcome_avgs %}
+                        <tr class="avg-row">
+                            <td class="row-label">Class avg</td>
+                            {% for oid, (code, name) in outcomes %}
+                                {% set cell = outcome_avgs.get(oid) %}
+                                {% if cell %}
+                                    {% set avg, band_css = cell %}
+                                    <td class="heat-cell {{ band_css }}">{{ avg }}</td>
+                                {% else %}
+                                    <td class="heat-cell band-none">—</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="icon">&#128202;</div>
+                <p>No assessment data for this class yet.</p>
+                <p style="margin-top:8px"><a href="{{ url_for('marks_entry') }}" style="color:#3498db">Log some marks &rarr;</a></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

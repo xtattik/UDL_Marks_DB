@@ -110,6 +110,7 @@
             <a href="{{ url_for('index') }}" class="active">Dashboard</a>
             <a href="{{ url_for('marks_entry') }}">New Entry</a>
             <a href="{{ url_for('recent_entries') }}">History</a>
+            <a href="{{ url_for('analytics') }}">Analytics</a>
         </nav>
     </div>
 
@@ -144,10 +145,10 @@
                 <h3>View History</h3>
                 <p>Browse all submitted entries</p>
             </a>
-            <a href="#" class="action-card" onclick="alert('Coming soon: Student & Class management'); return false;">
-                <div class="icon">&#9881;</div>
-                <h3>Manage Data</h3>
-                <p>Edit students, classes, outcomes</p>
+            <a href="{{ url_for('analytics') }}" class="action-card">
+                <div class="icon">&#128202;</div>
+                <h3>Analytics</h3>
+                <p>Heatmaps, progress &amp; sparklines</p>
             </a>
         </div>
 
@@ -167,7 +168,7 @@
                     {% for entry in recent %}
                     <tr>
                         <td><strong>{{ entry.assessment_title }}</strong></td>
-                        <td>{{ entry.first_name }} {{ entry.last_name }}</td>
+                        <td><a href="{{ url_for('student_progress', student_id=entry.student_id) }}" style="color:#3498db;text-decoration:none;font-weight:500;">{{ entry.first_name }} {{ entry.last_name }}</a></td>
                         <td><span class="badge">{{ entry.class_name }}</span></td>
                         <td>{{ entry.attempt_date }}</td>
                     </tr>
