@@ -41,71 +41,107 @@ def init_db():
     c = conn.cursor()
 
     c.execute("""
+        CREATE TABLE IF NOT EXISTS stages (
+            stage_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+            stage_name TEXT UNIQUE NOT NULL
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS stage_years (
+            stage_id   INTEGER NOT NULL,
+            year_group TEXT    NOT NULL,
+            PRIMARY KEY (stage_id, year_group),
+            FOREIGN KEY (stage_id) REFERENCES stages(stage_id)
+        )
+    """)
+    c.execute("""
         CREATE TABLE IF NOT EXISTS students (
-            student_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            first_name TEXT NOT NULL,
-            last_name TEXT NOT NULL,
+            student_id      INTEGER PRIMARY KEY,
+            first_name      TEXT NOT NULL,
+            last_name       TEXT NOT NULL,
+            year_group      TEXT,
             enrollment_date DATE
         )
     """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS subjects (
-            subject_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subject_id   INTEGER PRIMARY KEY AUTOINCREMENT,
             subject_name TEXT UNIQUE NOT NULL
         )
     """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS classes (
-            class_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            class_id   INTEGER PRIMARY KEY AUTOINCREMENT,
             subject_id INTEGER NOT NULL,
-            grade_level TEXT NOT NULL,
-            FOREIGN KEY (subject_id) REFERENCES subjects(subject_id)
+            year_group TEXT    NOT NULL,
+            stage_id   INTEGER NOT NULL,
+            FOREIGN KEY (subject_id) REFERENCES subjects(subject_id),
+            FOREIGN KEY (stage_id)   REFERENCES stages(stage_id)
         )
     """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS outcomes (
-            outcome_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            outcome_code TEXT UNIQUE NOT NULL,
-            outcome_name TEXT NOT NULL,
-            is_theoretical BOOLEAN NOT NULL DEFAULT 1
+            outcome_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+            outcome_code  TEXT UNIQUE NOT NULL,
+            outcome_name  TEXT NOT NULL,
+            is_theoretical BOOLEAN NOT NULL DEFAULT 1,
+            subject_id    INTEGER,
+            stage_id      INTEGER,
+            FOREIGN KEY (subject_id) REFERENCES subjects(subject_id),
+            FOREIGN KEY (stage_id)   REFERENCES stages(stage_id)
         )
     """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS attempts (
-            attempt_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
-            class_id INTEGER NOT NULL,
-            attempt_date DATE NOT NULL,
-            assessment_title TEXT NOT NULL,
+            attempt_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id       INTEGER NOT NULL,
+            class_id         INTEGER,
+            attempt_date     DATE    NOT NULL,
+            assessment_title TEXT    NOT NULL,
             FOREIGN KEY (student_id) REFERENCES students(student_id),
-            FOREIGN KEY (class_id) REFERENCES classes(class_id)
+            FOREIGN KEY (class_id)   REFERENCES classes(class_id)
         )
     """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS attempt_outcomes (
             attempt_outcome_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            attempt_id INTEGER NOT NULL,
-            outcome_id INTEGER NOT NULL,
+            attempt_id         INTEGER NOT NULL,
+            outcome_id         INTEGER NOT NULL,
             FOREIGN KEY (attempt_id) REFERENCES attempts(attempt_id),
             FOREIGN KEY (outcome_id) REFERENCES outcomes(outcome_id)
         )
     """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS scoring_detail (
-            scoring_detail_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            scoring_detail_id  INTEGER PRIMARY KEY AUTOINCREMENT,
             attempt_outcome_id INTEGER NOT NULL,
-            score INTEGER NOT NULL,
+            score              INTEGER NOT NULL,
             FOREIGN KEY (attempt_outcome_id) REFERENCES attempt_outcomes(attempt_outcome_id)
         )
     """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
+            user_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            username      TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
-            role TEXT NOT NULL
+            role          TEXT NOT NULL
         )
     """)
+
+    # Migrate existing databases that predate these schema changes
+    _migrations = [
+        "ALTER TABLE students ADD COLUMN year_group TEXT",
+        "ALTER TABLE classes  RENAME COLUMN grade_level TO year_group",
+        "ALTER TABLE classes  ADD COLUMN stage_id INTEGER REFERENCES stages(stage_id)",
+        "ALTER TABLE outcomes ADD COLUMN subject_id INTEGER REFERENCES subjects(subject_id)",
+        "ALTER TABLE outcomes ADD COLUMN stage_id   INTEGER REFERENCES stages(stage_id)",
+        "ALTER TABLE attempts DROP COLUMN class_id",  # will fail gracefully — replaced by nullable below
+    ]
+    for sql in _migrations:
+        try:
+            c.execute(sql)
+        except Exception:
+            pass
 
     conn.commit()
     conn.close()
@@ -118,41 +154,84 @@ def seed_db():
     for name in ('Mathematics', 'Science', 'English'):
         c.execute("INSERT OR IGNORE INTO subjects (subject_name) VALUES (?)", (name,))
 
+    for stage_name in ('Stage 3', 'Stage 4', 'Stage 5'):
+        c.execute("INSERT OR IGNORE INTO stages (stage_name) VALUES (?)", (stage_name,))
+
+    stage_year_map = {
+        'Stage 3': ('Year 5', 'Year 6'),
+        'Stage 4': ('Year 7', 'Year 8'),
+        'Stage 5': ('Year 9', 'Year 10'),
+    }
+    for stage_name, years in stage_year_map.items():
+        row = c.execute("SELECT stage_id FROM stages WHERE stage_name = ?", (stage_name,)).fetchone()
+        if row:
+            for yr in years:
+                c.execute(
+                    "INSERT OR IGNORE INTO stage_years (stage_id, year_group) VALUES (?, ?)",
+                    (row['stage_id'], yr)
+                )
+
+    sci_id   = c.execute("SELECT subject_id FROM subjects WHERE subject_name = 'Science'").fetchone()['subject_id']
+    stage4   = c.execute("SELECT stage_id  FROM stages  WHERE stage_name  = 'Stage 4'").fetchone()['stage_id']
+    stage5   = c.execute("SELECT stage_id  FROM stages  WHERE stage_name  = 'Stage 5'").fetchone()['stage_id']
+
     outcomes = [
-        ('SC4-1MW', 'Describes and evaluates investigations in terms of the hypotheses, variables, ranges, increments, reliability and validity', 1),
-        ('SC4-2MW', 'Processes data and information to propose evidence-based explanations and arguments', 0),
-        ('SC4-3MW', 'Uses scientific understanding to describe living and non-living matter in terms of relevant models and theories', 1),
-        ('SC4-4MW', 'Evaluates claims and recommendations in relation to evidence obtained from a range of primary and/or secondary sources', 0),
-        ('SC4-5ES', 'Describes and explains how scientific knowledge, understanding and skills develop over time and through collaboration between scientists', 1),
-        ('SC4-6ES', 'Evaluates the role of technological systems on society and the environment and considers alternatives', 0),
+        ('SC4-WS-01', 'Observing — uses appropriate instruments and techniques to make and record observations',               1, sci_id, stage4),
+        ('SC4-WS-02', 'Predicting/Questioning — formulates questions or hypotheses based on observations',                     1, sci_id, stage4),
+        ('SC4-WS-03', 'Planning — designs and conducts investigations to collect valid and reliable data',                     1, sci_id, stage4),
+        ('SC4-WS-04', 'Processing and Analysing — processes data and proposes evidence-based explanations',                    0, sci_id, stage4),
+        ('SC4-WS-05', 'Communicating — communicates scientific understanding using appropriate representations',               0, sci_id, stage4),
+        ('SC4-GEV-01','Genetics & evolutionary change — describes and explains how species change over time',                  1, sci_id, stage4),
+        ('SC5-WS-01', 'Observing — selects and uses instruments independently; records data with precision',                   1, sci_id, stage5),
+        ('SC5-WS-02', 'Predicting/Questioning — formulates testable questions with clearly defined variables',                 1, sci_id, stage5),
+        ('SC5-WS-03', 'Planning — designs controlled investigations justifying choices of equipment and method',               1, sci_id, stage5),
+        ('SC5-WS-04', 'Processing and Analysing — analyses data critically; identifies trends and anomalies',                  0, sci_id, stage5),
+        ('SC5-WS-05', 'Communicating — selects and applies appropriate scientific representations for audience',               0, sci_id, stage5),
+        ('SC5-GEV-01','Genetics & evolutionary change — evaluates evidence for evolution using multiple sources',              1, sci_id, stage5),
     ]
     c.executemany(
-        "INSERT OR IGNORE INTO outcomes (outcome_code, outcome_name, is_theoretical) VALUES (?, ?, ?)",
+        "INSERT OR IGNORE INTO outcomes (outcome_code, outcome_name, is_theoretical, subject_id, stage_id) VALUES (?, ?, ?, ?, ?)",
         outcomes
     )
 
     students = [
-        ('Alex', 'Smith', '2023-01-15'), ('Blake', 'Johnson', '2023-01-15'),
-        ('Casey', 'Williams', '2023-01-15'), ('Dana', 'Brown', '2023-01-15'),
-        ('Ellis', 'Jones', '2023-01-15'), ('Finley', 'Garcia', '2023-01-15'),
-        ('Gray', 'Miller', '2023-01-15'), ('Harper', 'Davis', '2023-01-15'),
-        ('Indigo', 'Rodriguez', '2023-01-15'), ('Jordan', 'Martinez', '2023-01-15'),
-        ('Kai', 'Hernandez', '2023-01-15'), ('Liam', 'Lopez', '2023-01-15'),
-        ('Morgan', 'Gonzalez', '2023-01-15'), ('Noah', 'Wilson', '2023-01-15'),
-        ('Olivia', 'Anderson', '2023-01-15'), ('Parker', 'Thomas', '2023-01-15'),
-        ('Quinn', 'Taylor', '2023-01-15'), ('Riley', 'Moore', '2023-01-15'),
-        ('Sam', 'Jackson', '2023-01-15'), ('Taylor', 'Martin', '2023-01-15'),
+        (10001, 'Alex',   'Smith',      'Year 7', '2024-01-15'),
+        (10002, 'Blake',  'Johnson',    'Year 7', '2024-01-15'),
+        (10003, 'Casey',  'Williams',   'Year 7', '2024-01-15'),
+        (10004, 'Dana',   'Brown',      'Year 7', '2024-01-15'),
+        (10005, 'Ellis',  'Jones',      'Year 7', '2024-01-15'),
+        (10006, 'Finley', 'Garcia',     'Year 8', '2023-01-15'),
+        (10007, 'Gray',   'Miller',     'Year 8', '2023-01-15'),
+        (10008, 'Harper', 'Davis',      'Year 8', '2023-01-15'),
+        (10009, 'Indigo', 'Rodriguez',  'Year 8', '2023-01-15'),
+        (10010, 'Jordan', 'Martinez',   'Year 8', '2023-01-15'),
+        (10011, 'Kai',    'Hernandez',  'Year 9', '2022-01-15'),
+        (10012, 'Liam',   'Lopez',      'Year 9', '2022-01-15'),
+        (10013, 'Morgan', 'Gonzalez',   'Year 9', '2022-01-15'),
+        (10014, 'Noah',   'Wilson',     'Year 9', '2022-01-15'),
+        (10015, 'Olivia', 'Anderson',   'Year 9', '2022-01-15'),
+        (10016, 'Parker', 'Thomas',     'Year 10','2021-01-15'),
+        (10017, 'Quinn',  'Taylor',     'Year 10','2021-01-15'),
+        (10018, 'Riley',  'Moore',      'Year 10','2021-01-15'),
+        (10019, 'Sam',    'Jackson',    'Year 10','2021-01-15'),
+        (10020, 'Taylor', 'Martin',     'Year 10','2021-01-15'),
     ]
     c.executemany(
-        "INSERT OR IGNORE INTO students (first_name, last_name, enrollment_date) VALUES (?, ?, ?)",
+        "INSERT OR IGNORE INTO students (student_id, first_name, last_name, year_group, enrollment_date) VALUES (?, ?, ?, ?, ?)",
         students
     )
 
-    # classes: subject_id 1=Math, 2=Science, 3=English
-    for subj_id in (1, 2, 3):
+    # One class per subject at Stage 4 (Year 7) and Stage 5 (Year 9)
+    math_id = c.execute("SELECT subject_id FROM subjects WHERE subject_name = 'Mathematics'").fetchone()['subject_id']
+    eng_id  = c.execute("SELECT subject_id FROM subjects WHERE subject_name = 'English'").fetchone()['subject_id']
+    for subj_id in (math_id, sci_id, eng_id):
         c.execute(
-            "INSERT OR IGNORE INTO classes (subject_id, grade_level) VALUES (?, ?)",
-            (subj_id, 'Stage 4')
+            "INSERT OR IGNORE INTO classes (subject_id, year_group, stage_id) VALUES (?, ?, ?)",
+            (subj_id, 'Year 7', stage4)
+        )
+        c.execute(
+            "INSERT OR IGNORE INTO classes (subject_id, year_group, stage_id) VALUES (?, ?, ?)",
+            (subj_id, 'Year 9', stage5)
         )
 
     c.execute(
@@ -193,12 +272,14 @@ def _sparkline_svg(scores, width=90, height=28, max_val=MAX_SCORE):
 def _all_classes(cursor):
     cursor.execute("""
         SELECT c.class_id,
-               subj.subject_name || ' ' || c.grade_level AS class_name,
+               subj.subject_name || ' ' || c.year_group AS class_name,
                subj.subject_name,
-               c.grade_level
+               c.year_group,
+               sg.stage_name
         FROM classes c
         JOIN subjects subj ON c.subject_id = subj.subject_id
-        ORDER BY subj.subject_name, c.grade_level
+        JOIN stages   sg   ON c.stage_id   = sg.stage_id
+        ORDER BY subj.subject_name, c.year_group
     """)
     return cursor.fetchall()
 
@@ -223,11 +304,11 @@ def index():
     c.execute("""
         SELECT a.attempt_id, a.assessment_title, a.attempt_date,
                s.student_id, s.first_name, s.last_name,
-               subj.subject_name || ' ' || c.grade_level AS class_name
+               subj.subject_name || ' ' || c.year_group AS class_name
         FROM attempts a
         JOIN students s ON a.student_id = s.student_id
-        JOIN classes c ON a.class_id = c.class_id
-        JOIN subjects subj ON c.subject_id = subj.subject_id
+        LEFT JOIN classes c    ON a.class_id   = c.class_id
+        LEFT JOIN subjects subj ON c.subject_id = subj.subject_id
         ORDER BY a.attempt_date DESC, a.attempt_id DESC
         LIMIT 8
     """)
@@ -257,11 +338,11 @@ def marks_entry():
 
     c.execute("""
         SELECT c.class_id AS id,
-               subj.subject_name || ' ' || c.grade_level AS class_name,
+               subj.subject_name || ' ' || c.year_group AS class_name,
                subj.subject_name
         FROM classes c
         JOIN subjects subj ON c.subject_id = subj.subject_id
-        ORDER BY subj.subject_name, c.grade_level
+        ORDER BY subj.subject_name, c.year_group
     """)
     classes = c.fetchall()
 
@@ -342,12 +423,12 @@ def recent_entries():
     c.execute("""
         SELECT a.attempt_id, a.assessment_title, a.attempt_date,
                s.student_id, s.first_name, s.last_name,
-               subj.subject_name || ' ' || cl.grade_level AS class_name,
+               subj.subject_name || ' ' || cl.year_group AS class_name,
                GROUP_CONCAT(o.outcome_code, ', ') AS outcomes
         FROM attempts a
         JOIN students s ON a.student_id = s.student_id
-        JOIN classes cl ON a.class_id = cl.class_id
-        JOIN subjects subj ON cl.subject_id = subj.subject_id
+        LEFT JOIN classes cl   ON a.class_id   = cl.class_id
+        LEFT JOIN subjects subj ON cl.subject_id = subj.subject_id
         LEFT JOIN attempt_outcomes ao ON a.attempt_id = ao.attempt_id
         LEFT JOIN outcomes o ON ao.outcome_id = o.outcome_id
         GROUP BY a.attempt_id
@@ -378,22 +459,22 @@ def student_progress(student_id):
     params = [student_id]
     extra = ""
     if subject_id:
-        extra += " AND cl.subject_id = ?"
+        extra += " AND o.subject_id = ?"
         params.append(subject_id)
     if stage:
-        extra += " AND cl.grade_level = ?"
+        extra += " AND sg.stage_name = ?"
         params.append(stage)
 
     c.execute(f"""
         SELECT o.outcome_id, o.outcome_code, o.outcome_name,
                a.attempt_date, a.assessment_title,
-               sd.score, subj.subject_name, cl.grade_level
+               sd.score, subj.subject_name, sg.stage_name
         FROM scoring_detail sd
         JOIN attempt_outcomes ao ON sd.attempt_outcome_id = ao.attempt_outcome_id
-        JOIN outcomes o ON ao.outcome_id = o.outcome_id
-        JOIN attempts a ON ao.attempt_id = a.attempt_id
-        JOIN classes cl ON a.class_id = cl.class_id
-        JOIN subjects subj ON cl.subject_id = subj.subject_id
+        JOIN outcomes o          ON ao.outcome_id         = o.outcome_id
+        JOIN attempts a          ON ao.attempt_id         = a.attempt_id
+        LEFT JOIN subjects subj  ON o.subject_id          = subj.subject_id
+        LEFT JOIN stages   sg    ON o.stage_id            = sg.stage_id
         WHERE a.student_id = ?{extra}
         ORDER BY o.outcome_code, a.attempt_date
     """, params)
@@ -410,8 +491,10 @@ def student_progress(student_id):
             )
         outcome_data[oid]['scores'].append(row['score'])
         outcome_data[oid]['dates'].append(row['attempt_date'])
-        outcome_data[oid]['subjects'].add(row['subject_name'])
-        outcome_data[oid]['stages'].add(row['grade_level'])
+        if row['subject_name']:
+            outcome_data[oid]['subjects'].add(row['subject_name'])
+        if row['stage_name']:
+            outcome_data[oid]['stages'].add(row['stage_name'])
 
     outcome_list = []
     for oid, d in outcome_data.items():
@@ -435,7 +518,7 @@ def student_progress(student_id):
 
     c.execute("SELECT subject_id, subject_name FROM subjects ORDER BY subject_name")
     subjects = c.fetchall()
-    c.execute("SELECT DISTINCT grade_level FROM classes ORDER BY grade_level")
+    c.execute("SELECT stage_name FROM stages ORDER BY stage_id")
     stages = [r[0] for r in c.fetchall()]
 
     conn.close()
@@ -458,14 +541,14 @@ def analytics():
 
     c.execute("""
         SELECT c.class_id,
-               subj.subject_name || ' ' || c.grade_level AS class_name,
+               subj.subject_name || ' ' || c.year_group AS class_name,
                COUNT(DISTINCT a.student_id) AS student_count,
                COUNT(a.attempt_id) AS attempt_count
         FROM classes c
         JOIN subjects subj ON c.subject_id = subj.subject_id
         LEFT JOIN attempts a ON c.class_id = a.class_id
         GROUP BY c.class_id
-        ORDER BY subj.subject_name, c.grade_level
+        ORDER BY subj.subject_name, c.year_group
     """)
     classes = c.fetchall()
 
@@ -491,7 +574,7 @@ def class_analytics(class_id):
 
     c.execute("""
         SELECT c.class_id,
-               subj.subject_name || ' ' || c.grade_level AS class_name
+               subj.subject_name || ' ' || c.year_group AS class_name
         FROM classes c
         JOIN subjects subj ON c.subject_id = subj.subject_id
         WHERE c.class_id = ?
