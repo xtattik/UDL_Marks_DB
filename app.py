@@ -138,6 +138,12 @@ def init_db():
             role          TEXT NOT NULL
         )
     """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS _meta (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
 
     # Migrate existing databases that predate these schema changes
     _migrations = [
@@ -205,6 +211,18 @@ def init_db():
     """)
     c.execute("PRAGMA foreign_keys = ON")
 
+    # Stage/year structure is curriculum config, not sample data — always present.
+    for _sn in ('Stage 3', 'Stage 4', 'Stage 5'):
+        c.execute("INSERT OR IGNORE INTO stages (stage_name) VALUES (?)", (_sn,))
+    for _sn, _years in [('Stage 3', ('Year 5','Year 6')),
+                        ('Stage 4', ('Year 7','Year 8')),
+                        ('Stage 5', ('Year 9','Year 10'))]:
+        _row = c.execute("SELECT stage_id FROM stages WHERE stage_name=?", (_sn,)).fetchone()
+        if _row:
+            for _yr in _years:
+                c.execute("INSERT OR IGNORE INTO stage_years (stage_id, year_group) VALUES (?,?)",
+                          (_row['stage_id'], _yr))
+
     # One-time seed: if no explicit enrollments exist yet, derive them from year_group
     # so existing data keeps working before the roster is managed manually.
     existing = c.execute("SELECT COUNT(*) FROM student_classes").fetchone()[0]
@@ -225,30 +243,13 @@ def seed_db():
     conn = get_db_connection()
     c = conn.cursor()
 
-    # Only seed a brand-new database
-    if c.execute("SELECT COUNT(*) FROM subjects").fetchone()[0] > 0:
+    # Skip if already seeded — checked via _meta flag so release installs stay blank.
+    if c.execute("SELECT COUNT(*) FROM _meta WHERE key='seeded'").fetchone()[0]:
         conn.close()
         return
 
     for name in ('Mathematics', 'Science', 'English'):
         c.execute("INSERT OR IGNORE INTO subjects (subject_name) VALUES (?)", (name,))
-
-    for stage_name in ('Stage 3', 'Stage 4', 'Stage 5'):
-        c.execute("INSERT OR IGNORE INTO stages (stage_name) VALUES (?)", (stage_name,))
-
-    stage_year_map = {
-        'Stage 3': ('Year 5', 'Year 6'),
-        'Stage 4': ('Year 7', 'Year 8'),
-        'Stage 5': ('Year 9', 'Year 10'),
-    }
-    for stage_name, years in stage_year_map.items():
-        row = c.execute("SELECT stage_id FROM stages WHERE stage_name = ?", (stage_name,)).fetchone()
-        if row:
-            for yr in years:
-                c.execute(
-                    "INSERT OR IGNORE INTO stage_years (stage_id, year_group) VALUES (?, ?)",
-                    (row['stage_id'], yr)
-                )
 
     sci_id   = c.execute("SELECT subject_id FROM subjects WHERE subject_name = 'Science'").fetchone()['subject_id']
     stage4   = c.execute("SELECT stage_id  FROM stages  WHERE stage_name  = 'Stage 4'").fetchone()['stage_id']
@@ -318,6 +319,7 @@ def seed_db():
         ('admin', 'placeholder', 'teacher')
     )
 
+    c.execute("INSERT OR IGNORE INTO _meta (key, value) VALUES ('seeded', 'true')")
     conn.commit()
     conn.close()
 
