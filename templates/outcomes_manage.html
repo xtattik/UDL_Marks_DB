@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outcomes — Settings</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; }
+        .navbar {
+            background: linear-gradient(135deg, #2c3e50, #3498db); color: white;
+            padding: 0 30px; display: flex; align-items: center; justify-content: space-between;
+            height: 60px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .navbar h1 { font-size: 20px; font-weight: 600; }
+        .navbar nav a { color: rgba(255,255,255,0.8); text-decoration: none; margin-left: 24px; font-size: 14px; font-weight: 500; }
+        .navbar nav a:hover, .navbar nav a.active { color: white; }
+
+        .main-content { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .page-header h2 { font-size: 22px; color: #2c3e50; }
+        .back-link { color: #3498db; text-decoration: none; font-size: 14px; font-weight: 500; }
+        .back-link:hover { text-decoration: underline; }
+
+        .layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
+
+        /* Filter bar */
+        .filter-bar {
+            background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            padding: 14px 20px; margin-bottom: 16px;
+            display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+        }
+        .filter-bar select { padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+        .filter-bar select:focus { outline: none; border-color: #3498db; }
+        .btn-filter { padding: 7px 14px; background: #3498db; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-filter:hover { background: #2980b9; }
+        .btn-clear { padding: 7px 12px; background: none; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; color: #888; cursor: pointer; }
+        .btn-clear:hover { border-color: #aaa; color: #555; }
+        .unset-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #fff3cd; color: #856404; cursor: pointer; text-decoration: none; display: inline-block; }
+
+        /* Outcome table */
+        .card { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
+        .card-header { padding: 14px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+        .card-header h3 { font-size: 14px; font-weight: 700; color: #2c3e50; }
+        .card-header .count { font-size: 12px; color: #aaa; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 9px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; background: #fafbfc; text-align: left; border-bottom: 1px solid #eee; }
+        td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f8f9ff; }
+        tr.unset td { background: #fffbf0; }
+        tr.unset:hover td { background: #fff3cd; }
+        .code { font-family: monospace; font-weight: 700; color: #2c3e50; font-size: 13px; }
+        .name { color: #555; font-size: 12px; max-width: 280px; }
+        .badge { display: inline-block; padding: 2px 7px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+        .badge-theory  { background: #fef3cd; color: #856404; }
+        .badge-applied { background: #d4edda; color: #155724; }
+        .badge-warn    { background: #f8d7da; color: #721c24; }
+
+        /* Inline assignment form */
+        .assign-form { display: flex; gap: 6px; align-items: center; }
+        .assign-form select { padding: 4px 6px; border: 1px solid #ddd; border-radius: 5px; font-size: 12px; max-width: 120px; }
+        .assign-form select:focus { outline: none; border-color: #3498db; }
+        .btn-save { padding: 4px 10px; background: #3498db; color: white; border: none; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .btn-save:hover { background: #2980b9; }
+        .empty { padding: 40px; text-align: center; color: #bbb; font-size: 14px; }
+
+        /* Add outcome panel */
+        .panel { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 20px; }
+        .panel h3 { font-size: 14px; font-weight: 700; color: #2c3e50; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 12px; }
+        label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
+        input[type="text"], select.full { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+        input:focus, select.full:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
+        .form-hint { font-size: 11px; color: #aaa; margin-top: 3px; }
+        .btn-primary { width: 100%; padding: 10px; background: #3498db; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+        .btn-primary:hover { background: #2980b9; }
+        .alert-error { background: #fdecea; border: 1px solid #f5c6cb; color: #721c24; padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-bottom: 12px; }
+
+        .info-box { background: #e8f4fd; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #0c5460; margin-bottom: 16px; line-height: 1.6; }
+        .info-box strong { display: block; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>UDL Marks Database</h1>
+        <nav>
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('marks_entry') }}">New Entry</a>
+            <a href="{{ url_for('bulk_entry') }}">Bulk Entry</a>
+            <a href="{{ url_for('import_marks') }}">Import</a>
+            <a href="{{ url_for('recent_entries') }}">History</a>
+            <a href="{{ url_for('analytics') }}">Analytics</a>
+            <a href="{{ url_for('settings') }}" class="active">Settings</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <a href="{{ url_for('settings') }}" class="back-link">&larr; Settings</a>
+            <h2>Outcomes</h2>
+        </div>
+
+        <div class="info-box">
+            <strong>Cross-curricular note</strong>
+            Every outcome is linked to a subject and stage. When a student is assessed on an
+            outcome in an unclassified attempt (e.g. a cross-curricular project), that result
+            automatically flows into the correct class heatmap based on the outcome's
+            subject + stage — as long as the student is enrolled in that class.
+            Outcomes with no subject or stage set (shown in amber) will not appear in any class heatmap.
+        </div>
+
+        <div class="layout">
+            <div>
+                <!-- Filters -->
+                <form method="GET" action="{{ url_for('manage_outcomes') }}">
+                    <div class="filter-bar">
+                        <select name="subject">
+                            <option value="">All Subjects</option>
+                            {% for subj in subjects %}
+                            <option value="{{ subj.subject_id }}" {{ 'selected' if f_subject == subj.subject_id|string }}>{{ subj.subject_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="stage">
+                            <option value="">All Stages</option>
+                            {% for sg in stages %}
+                            <option value="{{ sg.stage_id }}" {{ 'selected' if f_stage == sg.stage_id|string }}>{{ sg.stage_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn-filter">Filter</button>
+                        {% if f_subject or f_stage or f_unset %}
+                        <a href="{{ url_for('manage_outcomes') }}" class="btn-clear">Clear</a>
+                        {% endif %}
+                        {% if unset_count %}
+                        <a href="{{ url_for('manage_outcomes', unset=1) }}"
+                           class="unset-badge" title="Show outcomes with no subject/stage assigned">
+                            &#9888; {{ unset_count }} unassigned
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+
+                <!-- Outcome table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Outcomes</h3>
+                        <span class="count">{{ outcomes|length }} shown</span>
+                    </div>
+                    {% if outcomes %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Description</th>
+                                <th>Type</th>
+                                <th>Subject &amp; Stage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for o in outcomes %}
+                            {% set unassigned = not o.subject_id or not o.stage_id %}
+                            <tr class="{{ 'unset' if unassigned }}">
+                                <td class="code">{{ o.outcome_code }}</td>
+                                <td class="name">{{ o.outcome_name }}</td>
+                                <td>
+                                    <span class="badge {{ 'badge-theory' if o.is_theoretical else 'badge-applied' }}">
+                                        {{ 'Theoretical' if o.is_theoretical else 'Applied' }}
+                                    </span>
+                                    {% if unassigned %}<span class="badge badge-warn" title="No subject or stage set">Unassigned</span>{% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('manage_outcomes') }}" class="assign-form">
+                                        <input type="hidden" name="action" value="update">
+                                        <input type="hidden" name="outcome_id" value="{{ o.outcome_id }}">
+                                        <select name="subject_id">
+                                            <option value="">— Subject —</option>
+                                            {% for subj in subjects %}
+                                            <option value="{{ subj.subject_id }}" {{ 'selected' if o.subject_id == subj.subject_id }}>{{ subj.subject_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <select name="stage_id">
+                                            <option value="">— Stage —</option>
+                                            {% for sg in stages %}
+                                            <option value="{{ sg.stage_id }}" {{ 'selected' if o.stage_id == sg.stage_id }}>{{ sg.stage_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn-save">Save</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty">No outcomes match the current filter.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Add outcome -->
+            <div class="panel">
+                <h3>Add Outcome</h3>
+                {% if error %}
+                <div class="alert-error">{{ error }}</div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('manage_outcomes') }}">
+                    <input type="hidden" name="action" value="add">
+                    <div class="form-group">
+                        <label>Code *</label>
+                        <input type="text" name="outcome_code" placeholder="e.g. SC5-WS-06" required>
+                        <span class="form-hint">Must be unique. Match exactly what the rubric builder uses.</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <input type="text" name="outcome_name" placeholder="Full outcome description" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select name="is_theoretical" class="full">
+                            <option value="1">Theoretical</option>
+                            <option value="0">Applied</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <select name="subject_id" class="full">
+                            <option value="">— Not assigned —</option>
+                            {% for subj in subjects %}
+                            <option value="{{ subj.subject_id }}">{{ subj.subject_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stage</label>
+                        <select name="stage_id" class="full">
+                            <option value="">— Not assigned —</option>
+                            {% for sg in stages %}
+                            <option value="{{ sg.stage_id }}">{{ sg.stage_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">Add Outcome</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

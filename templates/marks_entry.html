@@ -144,8 +144,11 @@
         <nav>
             <a href="{{ url_for('index') }}">Dashboard</a>
             <a href="{{ url_for('marks_entry') }}" class="active">New Entry</a>
+            <a href="{{ url_for('bulk_entry') }}">Bulk Entry</a>
+            <a href="{{ url_for('import_marks') }}">Import</a>
             <a href="{{ url_for('recent_entries') }}">History</a>
             <a href="{{ url_for('analytics') }}">Analytics</a>
+            <a href="{{ url_for('settings') }}">Settings</a>
         </nav>
     </div>
 
@@ -160,11 +163,11 @@
                 <h3>&#128100; Assessment Context</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="student_id">Student *</label>
-                        <select id="student_id" name="student_id" required>
-                            <option value="">-- Select Student --</option>
-                            {% for student in students %}
-                            <option value="{{ student.id }}">{{ student.last_name }}, {{ student.first_name }}</option>
+                        <label for="year_group_filter">Year Group</label>
+                        <select id="year_group_filter">
+                            <option value="">-- All Year Groups --</option>
+                            {% for yg in year_groups %}
+                            <option value="{{ yg }}">{{ yg }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -173,9 +176,24 @@
                         <select id="class_id" name="class_id" required>
                             <option value="">-- Select Class --</option>
                             {% for cls in classes %}
-                            <option value="{{ cls.id }}">{{ cls.class_name }}</option>
+                            <option value="{{ cls.id }}"
+                                    data-year="{{ cls.year_group }}"
+                                    data-stage-id="{{ cls.stage_id }}"
+                                    data-stage="{{ cls.stage_name }}"
+                                    data-subject="{{ cls.subject_name }}">{{ cls.class_name }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label for="student_id">Student *</label>
+                        <select id="student_id" name="student_id" required disabled>
+                            <option value="">-- Select a class first --</option>
+                        </select>
+                        <span class="form-hint" id="studentHint" style="margin-top:5px">
+                            Students enrolled in the selected class will appear here.
+                        </span>
                     </div>
                 </div>
                 <div class="form-row">
@@ -224,14 +242,85 @@
     const availableOutcomes = {{ outcomes | tojson }};
     const MAX_SCORE = {{ max_score }};
     let selectedIds = new Set();
+    let activeStageId = null;
 
-    const searchInput  = document.getElementById('outcomeSearch');
-    const dropdown     = document.getElementById('outcomeDropdown');
-    const selectedWrap = document.getElementById('selectedOutcomes');
-    const scoringWrap  = document.getElementById('scoringSection');
-    const idsField     = document.getElementById('outcomeIds');
-    const submitBtn    = document.getElementById('submitBtn');
-    const formHint     = document.getElementById('formHint');
+    const yearFilter    = document.getElementById('year_group_filter');
+    const classSelect   = document.getElementById('class_id');
+    const studentSelect = document.getElementById('student_id');
+    const searchInput   = document.getElementById('outcomeSearch');
+    const dropdown      = document.getElementById('outcomeDropdown');
+    const selectedWrap  = document.getElementById('selectedOutcomes');
+    const scoringWrap   = document.getElementById('scoringSection');
+    const idsField      = document.getElementById('outcomeIds');
+    const submitBtn     = document.getElementById('submitBtn');
+    const formHint      = document.getElementById('formHint');
+
+    // Cache class options for year-group filtering
+    const allClassOptions = Array.from(classSelect.options).slice(1);
+
+    function rebuildClassSelect(yr) {
+        const current = classSelect.value;
+        classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+        allClassOptions.forEach(opt => {
+            if (!yr || opt.dataset.year === yr) classSelect.appendChild(opt.cloneNode(true));
+        });
+        if (current && classSelect.querySelector(`option[value="${current}"]`)) classSelect.value = current;
+        else { classSelect.value = ''; resetStudentSelect(); }
+    }
+
+    function resetStudentSelect() {
+        studentSelect.innerHTML = '<option value="">-- Select a class first --</option>';
+        studentSelect.disabled = true;
+        activeStageId = null;
+        document.getElementById('studentHint').textContent =
+            'Students enrolled in the selected class will appear here.';
+    }
+
+    async function loadStudentsForClass(classId, stageId) {
+        studentSelect.innerHTML = '<option value="">Loading…</option>';
+        studentSelect.disabled = true;
+        activeStageId = stageId || null;
+
+        const resp = await fetch(`/api/students_by_class?class_id=${classId}`);
+        const students = await resp.json();
+
+        studentSelect.innerHTML = '<option value="">-- Select Student --</option>';
+        if (students.length === 0) {
+            const hint = document.getElementById('studentHint');
+            hint.innerHTML = 'No students enrolled in this class. ' +
+                '<a href="/settings/class/' + classId + '/roster" target="_blank" ' +
+                'style="color:#3498db">Set up the roster →</a>';
+        } else {
+            students.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `${s.last_name}, ${s.first_name}`;
+                if (s.year_group) opt.textContent += ` (${s.year_group})`;
+                studentSelect.appendChild(opt);
+            });
+            studentSelect.disabled = false;
+            document.getElementById('studentHint').textContent =
+                `${students.length} student${students.length !== 1 ? 's' : ''} enrolled.`;
+        }
+    }
+
+    yearFilter.addEventListener('change', function () {
+        rebuildClassSelect(this.value);
+        if (!classSelect.value) activeStageId = null;
+    });
+
+    classSelect.addEventListener('change', function () {
+        const opt = this.options[this.selectedIndex];
+        if (!opt.value) { resetStudentSelect(); return; }
+        const stageId = opt.dataset.stageId ? parseInt(opt.dataset.stageId) : null;
+        // Sync year filter if not already set
+        if (!yearFilter.value && opt.dataset.year) {
+            yearFilter.value = opt.dataset.year;
+            rebuildClassSelect(opt.dataset.year);
+            classSelect.value = opt.value; // re-select after rebuild
+        }
+        loadStudentsForClass(opt.value, stageId);
+    });
 
     function escHtml(str) {
         const d = document.createElement('div');
@@ -245,15 +334,26 @@
         return text.replace(re, '<strong>$1</strong>');
     }
 
+    function getFilteredOutcomes(q) {
+        return availableOutcomes.filter(o => {
+            if (selectedIds.has(o.id)) return false;
+            // If a stage is active, show only outcomes matching that stage (or with no stage set)
+            if (activeStageId && o.stage_id && o.stage_id !== activeStageId) return false;
+            if (!q) return true;
+            return o.code.toLowerCase().includes(q) ||
+                   o.description.toLowerCase().includes(q) ||
+                   (o.focus_type || '').toLowerCase().includes(q);
+        });
+    }
+
     function renderDropdown(list, query) {
-        const visible = list.filter(o => !selectedIds.has(o.id));
-        if (!visible.length) {
+        if (!list.length) {
             dropdown.innerHTML = '<div class="outcome-option no-results">No outcomes found</div>';
         } else {
-            dropdown.innerHTML = visible.map(o => `
+            dropdown.innerHTML = list.map(o => `
                 <div class="outcome-option" data-id="${o.id}" data-code="${escHtml(o.code)}"
                      data-desc="${escHtml(o.description)}" data-focus="${escHtml(o.focus_type || '')}">
-                    <div class="opt-code">${escHtml(o.code)}</div>
+                    <div class="opt-code">${highlight(escHtml(o.code), query)}</div>
                     <div class="opt-desc">${highlight(escHtml(o.description), query)}</div>
                     <div class="opt-meta">${escHtml(o.focus_type || '')}</div>
                 </div>`).join('');
@@ -266,20 +366,12 @@
 
     searchInput.addEventListener('input', function () {
         const q = this.value.toLowerCase().trim();
-        const filtered = q
-            ? availableOutcomes.filter(o =>
-                o.code.toLowerCase().includes(q) ||
-                o.description.toLowerCase().includes(q) ||
-                (o.focus_type || '').toLowerCase().includes(q))
-            : availableOutcomes;
-        renderDropdown(filtered, q);
+        renderDropdown(getFilteredOutcomes(q), q);
     });
 
     searchInput.addEventListener('focus', function () {
         const q = this.value.toLowerCase().trim();
-        renderDropdown(q
-            ? availableOutcomes.filter(o => o.code.toLowerCase().includes(q) || o.description.toLowerCase().includes(q))
-            : availableOutcomes, q);
+        renderDropdown(getFilteredOutcomes(q), q);
     });
 
     document.addEventListener('click', e => {

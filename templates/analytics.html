@@ -80,6 +80,30 @@
         .stu-link:hover { text-decoration: underline; }
 
         .empty { color: #bbb; font-size: 13px; padding: 30px 24px; text-align: center; }
+
+        /* Filter bar */
+        .filter-bar {
+            background: white; border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            padding: 16px 24px; margin-bottom: 28px;
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+        }
+        .filter-bar label { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-bar select {
+            padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 13px; color: #333; background: #fafbfc;
+            min-width: 140px;
+        }
+        .filter-bar select:focus { outline: none; border-color: #3498db; }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-reset {
+            margin-left: auto; padding: 7px 14px; background: none;
+            border: 1px solid #ddd; border-radius: 6px; font-size: 12px;
+            color: #888; cursor: pointer; font-weight: 500;
+        }
+        .filter-reset:hover { border-color: #aaa; color: #555; }
+        .no-results-msg { display: none; color: #bbb; font-size: 13px; padding: 20px 0; text-align: center; }
+        .stu-year { font-size: 12px; color: #bbb; margin-left: 8px; }
     </style>
 </head>
 <body>
@@ -88,8 +112,11 @@
         <nav>
             <a href="{{ url_for('index') }}">Dashboard</a>
             <a href="{{ url_for('marks_entry') }}">New Entry</a>
+            <a href="{{ url_for('bulk_entry') }}">Bulk Entry</a>
+            <a href="{{ url_for('import_marks') }}">Import</a>
             <a href="{{ url_for('recent_entries') }}">History</a>
             <a href="{{ url_for('analytics') }}" class="active">Analytics</a>
+            <a href="{{ url_for('settings') }}">Settings</a>
         </nav>
     </div>
 
@@ -99,11 +126,37 @@
             <h2>Analytics</h2>
         </div>
 
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label for="f-stage">Stage</label>
+                <select id="f-stage">
+                    <option value="">All Stages</option>
+                    {% for sg in stages %}<option value="{{ sg }}">{{ sg }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="f-year">Year Group</label>
+                <select id="f-year">
+                    <option value="">All Years</option>
+                    {% for yg in year_groups %}<option value="{{ yg }}">{{ yg }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="f-subject">Subject</label>
+                <select id="f-subject">
+                    <option value="">All Subjects</option>
+                    {% for subj in subjects %}<option value="{{ subj.subject_name }}">{{ subj.subject_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <button class="filter-reset" id="filterReset">Clear filters</button>
+        </div>
+
         <div class="section-title">Class Heatmaps</div>
         {% if classes %}
-        <div class="class-grid">
+        <div class="class-grid" id="classGrid">
             {% for cls in classes %}
-            <a href="{{ url_for('class_analytics', class_id=cls.class_id) }}" class="class-card">
+            <a href="{{ url_for('class_analytics', class_id=cls.class_id) }}" class="class-card"
+               data-stage="{{ cls.stage_name }}" data-year="{{ cls.year_group }}" data-subject="{{ cls.subject_name }}">
                 <div class="cc-icon">&#128202;</div>
                 <div class="cc-name">{{ cls.class_name }}</div>
                 <div class="cc-meta">
@@ -114,28 +167,98 @@
             </a>
             {% endfor %}
         </div>
+        <div class="no-results-msg" id="classEmpty">No classes match the current filters.</div>
         {% else %}
         <p class="empty">No classes set up yet.</p>
         {% endif %}
 
-        <div class="section-title">Student Progress</div>
+        <div class="section-title" style="margin-top:36px">Student Progress</div>
         <div class="students-card">
             {% if students %}
-            <table>
+            <table id="studentTable">
                 {% for stu in students %}
-                <tr>
+                <tr data-year="{{ stu.year_group or '' }}" data-stage="{{ stu.stage_name or '' }}">
                     <td>
                         <span class="stu-name">{{ stu.name }}</span>
+                        <span class="stu-year">{{ stu.year_group or '' }}</span>
                         <a href="{{ url_for('student_progress', student_id=stu.student_id) }}" class="stu-link">View progress &rarr;</a>
                     </td>
                     <td class="stu-count">{{ stu.attempt_count }} assessment{{ 's' if stu.attempt_count != 1 }}</td>
                 </tr>
                 {% endfor %}
             </table>
+            <div class="no-results-msg" id="studentEmpty">No students match the current filters.</div>
             {% else %}
             <div class="empty">No students yet.</div>
             {% endif %}
         </div>
     </div>
+
+    <script>
+    const stageFilter   = document.getElementById('f-stage');
+    const yearFilter    = document.getElementById('f-year');
+    const subjectFilter = document.getElementById('f-subject');
+    const resetBtn      = document.getElementById('filterReset');
+
+    // When stage changes, sync year filter options to only show years in that stage
+    const stageYearMap = {{ stage_year_map | tojson }};
+    const allYearOpts  = Array.from(yearFilter.options);
+
+    stageFilter.addEventListener('change', function () {
+        const sg = this.value;
+        const current = yearFilter.value;
+        yearFilter.innerHTML = '<option value="">All Years</option>';
+        allYearOpts.slice(1).forEach(opt => {
+            if (!sg || (stageYearMap[sg] || []).includes(opt.value))
+                yearFilter.appendChild(opt.cloneNode(true));
+        });
+        if (yearFilter.querySelector(`option[value="${current}"]`)) yearFilter.value = current;
+        else yearFilter.value = '';
+        applyFilters();
+    });
+
+    yearFilter.addEventListener('change', applyFilters);
+    subjectFilter.addEventListener('change', applyFilters);
+
+    resetBtn.addEventListener('click', function () {
+        stageFilter.value = '';
+        yearFilter.innerHTML = '<option value="">All Years</option>';
+        allYearOpts.slice(1).forEach(opt => yearFilter.appendChild(opt.cloneNode(true)));
+        yearFilter.value = '';
+        subjectFilter.value = '';
+        applyFilters();
+    });
+
+    function applyFilters() {
+        const sg   = stageFilter.value;
+        const yr   = yearFilter.value;
+        const subj = subjectFilter.value;
+
+        // Class cards
+        const cards = document.querySelectorAll('#classGrid .class-card');
+        let visibleCards = 0;
+        cards.forEach(card => {
+            const show = (!sg   || card.dataset.stage   === sg)   &&
+                         (!yr   || card.dataset.year    === yr)   &&
+                         (!subj || card.dataset.subject === subj);
+            card.style.display = show ? '' : 'none';
+            if (show) visibleCards++;
+        });
+        const classEmpty = document.getElementById('classEmpty');
+        if (classEmpty) classEmpty.style.display = visibleCards ? 'none' : 'block';
+
+        // Student rows (subject filter doesn't apply to students)
+        const rows = document.querySelectorAll('#studentTable tr');
+        let visibleStudents = 0;
+        rows.forEach(row => {
+            const show = (!sg || row.dataset.stage === sg) &&
+                         (!yr || row.dataset.year  === yr);
+            row.style.display = show ? '' : 'none';
+            if (show) visibleStudents++;
+        });
+        const stuEmpty = document.getElementById('studentEmpty');
+        if (stuEmpty) stuEmpty.style.display = visibleStudents ? 'none' : 'block';
+    }
+    </script>
 </body>
 </html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classes — Settings</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; }
+        .navbar {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white; padding: 0 30px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 60px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .navbar h1 { font-size: 20px; font-weight: 600; }
+        .navbar nav a { color: rgba(255,255,255,0.8); text-decoration: none; margin-left: 24px; font-size: 14px; font-weight: 500; }
+        .navbar nav a:hover, .navbar nav a.active { color: white; }
+        .main-content { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .page-header h2 { font-size: 22px; color: #2c3e50; }
+        .back-link { color: #3498db; text-decoration: none; font-size: 14px; font-weight: 500; }
+        .back-link:hover { text-decoration: underline; }
+        .layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+
+        /* Table card */
+        .card { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 10px 18px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; background: #fafbfc; text-align: left; border-bottom: 1px solid #eee; }
+        td { padding: 11px 18px; font-size: 14px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f8f9ff; }
+        .class-name { font-weight: 600; color: #2c3e50; }
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge-stage { background: #e8f4fd; color: #3498db; }
+        .badge-code  { background: #f0faf4; color: #27ae60; }
+        .empty { padding: 40px; text-align: center; color: #bbb; font-size: 14px; }
+
+        /* Inline code edit form */
+        .code-form { display: flex; gap: 6px; align-items: center; }
+        .code-input {
+            padding: 5px 8px; border: 1px solid #ddd; border-radius: 5px;
+            font-size: 13px; width: 80px;
+        }
+        .code-input:focus { outline: none; border-color: #3498db; }
+        .btn-xs { padding: 4px 10px; border: none; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .btn-save { background: #3498db; color: white; }
+        .btn-save:hover { background: #2980b9; }
+
+        /* Add class form */
+        .form-card { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 24px; }
+        .form-card h3 { font-size: 15px; color: #2c3e50; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 14px; }
+        label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; }
+        select, input[type="text"] {
+            padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
+        }
+        select:focus, input:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
+        .form-hint { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .btn-primary { background: #3498db; color: white; border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 4px; }
+        .btn-primary:hover { background: #2980b9; }
+        .alert-error { background: #fdecea; border: 1px solid #f5c6cb; color: #721c24; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>UDL Marks Database</h1>
+        <nav>
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('marks_entry') }}">New Entry</a>
+            <a href="{{ url_for('bulk_entry') }}">Bulk Entry</a>
+            <a href="{{ url_for('import_marks') }}">Import</a>
+            <a href="{{ url_for('recent_entries') }}">History</a>
+            <a href="{{ url_for('analytics') }}">Analytics</a>
+            <a href="{{ url_for('settings') }}" class="active">Settings</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <a href="{{ url_for('settings') }}" class="back-link">&larr; Settings</a>
+            <h2>Manage Classes</h2>
+        </div>
+
+        <div class="layout">
+            <!-- Class list -->
+            <div class="card">
+                {% if classes %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Stage</th>
+                            <th>Code</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cls in classes %}
+                        <tr>
+                            <td class="class-name">{{ cls.subject_name }} {{ cls.year_group }}</td>
+                            <td><span class="badge badge-stage">{{ cls.stage_name }}</span></td>
+                            <td>
+                                <form method="POST" action="{{ url_for('manage_classes') }}" class="code-form">
+                                    <input type="hidden" name="action" value="update_code">
+                                    <input type="hidden" name="class_id" value="{{ cls.class_id }}">
+                                    <input type="text" name="class_code" class="code-input"
+                                           value="{{ cls.class_code or '' }}"
+                                           placeholder="e.g. 9.1">
+                                    <button type="submit" class="btn-xs btn-save">Save</button>
+                                </form>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('class_roster', class_id=cls.class_id) }}"
+                                   class="btn-xs" style="padding:4px 10px;border:1px solid #ddd;border-radius:5px;text-decoration:none;font-size:12px;color:#555;font-weight:600;">
+                                    Roster &rarr;
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty">No classes yet. Add one using the form.</div>
+                {% endif %}
+            </div>
+
+            <!-- Add class form -->
+            <div class="form-card">
+                <h3>Add New Class</h3>
+                {% if error %}
+                <div class="alert-error">{{ error }}</div>
+                {% endif %}
+                <form method="POST" action="{{ url_for('manage_classes') }}">
+                    <input type="hidden" name="action" value="add">
+                    <div class="form-group">
+                        <label for="subject_id">Subject *</label>
+                        <select id="subject_id" name="subject_id" required>
+                            <option value="">— Select subject —</option>
+                            {% for subj in subjects %}
+                            <option value="{{ subj.subject_id }}">{{ subj.subject_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="year_group">Year Group *</label>
+                        <select id="year_group" name="year_group" required>
+                            <option value="">— Select year —</option>
+                            {% for yg in year_groups %}
+                            <option value="{{ yg }}">{{ yg }}</option>
+                            {% endfor %}
+                        </select>
+                        <span class="form-hint">Stage is assigned automatically from year group.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="class_code">Class Code (optional)</label>
+                        <input type="text" id="class_code" name="class_code" placeholder="e.g. 9.1, A, Blue">
+                        <span class="form-hint">Distinguishes multiple classes in the same year and subject.</span>
+                    </div>
+                    <button type="submit" class="btn-primary">Add Class</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

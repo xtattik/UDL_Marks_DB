@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Students — Settings</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; }
+        .navbar {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white; padding: 0 30px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 60px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .navbar h1 { font-size: 20px; font-weight: 600; }
+        .navbar nav a { color: rgba(255,255,255,0.8); text-decoration: none; margin-left: 24px; font-size: 14px; font-weight: 500; }
+        .navbar nav a:hover, .navbar nav a.active { color: white; }
+        .main-content { max-width: 820px; margin: 30px auto; padding: 0 20px; }
+        .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .page-header h2 { font-size: 22px; color: #2c3e50; }
+        .back-link { color: #3498db; text-decoration: none; font-size: 14px; font-weight: 500; }
+        .back-link:hover { text-decoration: underline; }
+        .form-card { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 28px; margin-bottom: 20px; }
+        .form-card h3 { font-size: 15px; color: #2c3e50; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .drop-zone {
+            border: 2px dashed #c8d6e5; border-radius: 8px;
+            padding: 36px 24px; text-align: center; cursor: pointer;
+            transition: border-color 0.2s, background 0.2s; background: #f8fbff;
+            position: relative;
+        }
+        .drop-zone.drag-over { border-color: #3498db; background: #eaf4fd; }
+        .drop-zone.has-file  { border-color: #27ae60; background: #f0faf4; }
+        .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .drop-icon  { font-size: 36px; margin-bottom: 10px; }
+        .drop-label { font-size: 15px; font-weight: 600; color: #2c3e50; }
+        .drop-hint  { font-size: 13px; color: #999; margin-top: 4px; }
+        .file-name  { font-size: 13px; font-weight: 600; color: #27ae60; margin-top: 8px; display: none; }
+        .btn { padding: 11px 24px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .submit-row { display: flex; justify-content: flex-end; margin-top: 20px; }
+        .alert-error { background: #fdecea; border: 1px solid #f5c6cb; color: #721c24; padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 20px; }
+        .format-hint { background: #f8f9fa; border-radius: 8px; padding: 14px 18px; font-size: 13px; color: #666; margin-top: 16px; line-height: 1.7; }
+        .format-hint code { background: #e9ecef; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+        /* Results */
+        .results-card { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 20px; }
+        .results-header { padding: 16px 24px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 16px; }
+        .results-header h3 { font-size: 15px; color: #2c3e50; }
+        .stat-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .chip-ok      { background: #d4edda; color: #155724; }
+        .chip-updated { background: #cce5ff; color: #004085; }
+        .chip-skip    { background: #fff3cd; color: #856404; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 10px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; background: #fafbfc; text-align: left; }
+        td { padding: 11px 20px; font-size: 13px; border-bottom: 1px solid #f5f5f5; }
+        tr:last-child td { border-bottom: none; }
+        .status-ok      { color: #27ae60; font-weight: 700; }
+        .status-updated { color: #3498db; font-weight: 700; }
+        .status-skipped { color: #e67e22; font-weight: 700; }
+        .detail-text    { color: #888; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>UDL Marks Database</h1>
+        <nav>
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('marks_entry') }}">New Entry</a>
+            <a href="{{ url_for('bulk_entry') }}">Bulk Entry</a>
+            <a href="{{ url_for('import_marks') }}">Import</a>
+            <a href="{{ url_for('recent_entries') }}">History</a>
+            <a href="{{ url_for('analytics') }}">Analytics</a>
+            <a href="{{ url_for('settings') }}" class="active">Settings</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <a href="{{ url_for('settings') }}" class="back-link">&larr; Settings</a>
+            <h2>Import Students from CSV</h2>
+        </div>
+
+        {% if error %}
+        <div class="alert-error">{{ error }}</div>
+        {% endif %}
+
+        {% if results is defined %}
+        <div class="results-card">
+            <div class="results-header">
+                <h3>Import complete</h3>
+                {% if imported %}<span class="stat-chip chip-ok">&#10003; {{ imported }} added</span>{% endif %}
+                {% if updated %}<span class="stat-chip chip-updated">&#8635; {{ updated }} updated</span>{% endif %}
+                {% if skipped %}<span class="stat-chip chip-skip">&#9888; {{ skipped }} skipped</span>{% endif %}
+            </div>
+            <table>
+                <thead><tr><th>Student</th><th>Status</th><th>Detail</th></tr></thead>
+                <tbody>
+                    {% for r in results %}
+                    <tr>
+                        <td>{{ r.name }}</td>
+                        <td class="status-{{ r.status }}">
+                            {% if r.status == 'ok' %}Added
+                            {% elif r.status == 'updated' %}Updated
+                            {% else %}Skipped{% endif %}
+                        </td>
+                        <td class="detail-text">{{ r.detail }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-card">
+                <h3>&#128190; CSV File</h3>
+                <div class="drop-zone" id="dropZone">
+                    <input type="file" name="csv_file" id="csvFile" accept=".csv">
+                    <div class="drop-icon">&#128101;</div>
+                    <div class="drop-label">Drop CSV here or click to browse</div>
+                    <div class="drop-hint">Exported from your school's administration system</div>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+                <div class="format-hint">
+                    <strong>Required columns:</strong> <code>student_id</code>, <code>first_name</code>, <code>last_name</code><br>
+                    <strong>Optional:</strong> <code>year_group</code> (e.g. <code>Year 9</code>)<br>
+                    Column headers are flexible — also accepts <code>Student ID</code>, <code>First Name</code>, <code>Last Name</code>, <code>Year Group</code>, <code>Surname</code>.<br>
+                    Existing students are <strong>updated</strong> (name + year group) if their ID matches. Assessment history is preserved.
+                </div>
+                <div class="submit-row">
+                    <button type="submit" class="btn btn-primary">Import Students</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('csvFile');
+    const fileLabel = document.getElementById('fileName');
+
+    fileInput.addEventListener('change', function () {
+        if (this.files[0]) {
+            fileLabel.textContent = this.files[0].name;
+            fileLabel.style.display = 'block';
+            dropZone.classList.add('has-file');
+        }
+    });
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const dt = new DataTransfer(); dt.items.add(file);
+            fileInput.files = dt.files;
+            fileLabel.textContent = file.name;
+            fileLabel.style.display = 'block';
+            dropZone.classList.add('has-file');
+        }
+    });
+    </script>
+</body>
+</html>

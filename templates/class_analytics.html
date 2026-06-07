@@ -119,6 +119,16 @@
         tr.avg-row td { background: #f0f4f8; font-size: 11px; font-weight: 700; }
         tr.avg-row td.row-label { color: #666; font-style: italic; }
 
+        /* View toggle */
+        .view-toggle { display: flex; gap: 4px; margin-left: auto; }
+        .toggle-btn {
+            padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+            text-decoration: none; color: #888; border: 1px solid #ddd; background: white;
+            transition: all 0.15s;
+        }
+        .toggle-btn:hover { border-color: #3498db; color: #3498db; }
+        .toggle-btn.active { background: #3498db; color: white; border-color: #3498db; }
+
         /* No data */
         .empty-state {
             text-align: center; padding: 60px 20px; color: #999;
@@ -132,8 +142,11 @@
         <nav>
             <a href="{{ url_for('index') }}">Dashboard</a>
             <a href="{{ url_for('marks_entry') }}">New Entry</a>
+            <a href="{{ url_for('bulk_entry') }}">Bulk Entry</a>
+            <a href="{{ url_for('import_marks') }}">Import</a>
             <a href="{{ url_for('recent_entries') }}">History</a>
             <a href="{{ url_for('analytics') }}">Analytics</a>
+            <a href="{{ url_for('settings') }}">Settings</a>
         </nav>
     </div>
 
@@ -142,7 +155,7 @@
             <div class="sidebar-card">
                 <h3>Classes</h3>
                 {% for cls in all_classes %}
-                <a href="{{ url_for('class_analytics', class_id=cls.class_id) }}"
+                <a href="{{ url_for('class_analytics', class_id=cls.class_id, view=view_mode) }}"
                    class="sidebar-link {% if cls.class_id == class_info.class_id %}active{% endif %}">
                     {{ cls.class_name }}
                 </a>
@@ -157,7 +170,7 @@
             </div>
 
             <div class="legend">
-                <span>Avg / {{ max_score }}</span>
+                <span>{{ 'Peak' if view_mode == 'peak' else 'Avg' }} / {{ max_score }}</span>
                 <div class="legend-item"><div class="swatch sw-beyond"></div> 16 Beyond Stage</div>
                 <div class="legend-item"><div class="swatch sw-well-above"></div> 13–15 Well Above</div>
                 <div class="legend-item"><div class="swatch sw-above"></div> 10–12 Above Standard</div>
@@ -165,6 +178,12 @@
                 <div class="legend-item"><div class="swatch sw-working"></div> 4–6 Working Towards</div>
                 <div class="legend-item"><div class="swatch sw-limited"></div> 1–3 Limited</div>
                 <div class="legend-item"><div class="swatch sw-none"></div> No data</div>
+                <div class="view-toggle">
+                    <a href="{{ url_for('class_analytics', class_id=class_info.class_id, view='peak') }}"
+                       class="toggle-btn {{ 'active' if view_mode == 'peak' }}">Peak</a>
+                    <a href="{{ url_for('class_analytics', class_id=class_info.class_id, view='avg') }}"
+                       class="toggle-btn {{ 'active' if view_mode == 'avg' }}">Average</a>
+                </div>
             </div>
 
             {% if students and outcomes %}
@@ -204,7 +223,7 @@
                         <!-- Class average row -->
                         {% if outcome_avgs %}
                         <tr class="avg-row">
-                            <td class="row-label">Class avg</td>
+                            <td class="row-label">{{ 'Class peak avg' if view_mode == 'peak' else 'Class avg' }}</td>
                             {% for oid, (code, name) in outcomes %}
                                 {% set cell = outcome_avgs.get(oid) %}
                                 {% if cell %}
