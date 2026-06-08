@@ -3,7 +3,7 @@ import io
 import sqlite3
 from collections import defaultdict
 from datetime import date
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 
 app = Flask(__name__)
 DATABASE = 'udl_marks_db.sqlite'
@@ -605,6 +605,67 @@ def student_progress(student_id):
         ))
     outcome_list.sort(key=lambda x: x['code'])
 
+    # ── Coverage gaps ────────────────────────────────────────────────────────
+    # Outcomes for this student's stage (derived from year_group) that have
+    # never been assessed for them.  Subject filter applies; stage is implicit.
+    gaps_params = [student_id, student_id]
+    gaps_extra  = ""
+    if subject_id:
+        gaps_extra = " AND o.subject_id = ?"
+        gaps_params.append(subject_id)
+
+    c.execute(f"""
+        SELECT o.outcome_id, o.outcome_code, o.outcome_name, o.is_theoretical,
+               COALESCE(subj.subject_name, 'Unassigned') AS subject_name,
+               COALESCE(sg.stage_name, '')               AS stage_name
+        FROM outcomes o
+        LEFT JOIN subjects subj ON o.subject_id = subj.subject_id
+        LEFT JOIN stages   sg   ON o.stage_id   = sg.stage_id
+        JOIN stage_years   sy   ON o.stage_id   = sy.stage_id
+        WHERE sy.year_group = (SELECT year_group FROM students WHERE student_id = ?)
+          AND o.outcome_id NOT IN (
+              SELECT DISTINCT ao.outcome_id
+              FROM attempt_outcomes ao
+              JOIN attempts a ON ao.attempt_id = a.attempt_id
+              WHERE a.student_id = ?
+          )
+        {gaps_extra}
+        ORDER BY subj.subject_name, o.outcome_code
+    """, gaps_params)
+    gaps = c.fetchall()
+
+    # ── Raw history (for audit trail / on-screen + export) ────────────────
+    hist_params = [student_id]
+    hist_extra  = ""
+    if subject_id:
+        hist_extra = " AND o.subject_id = ?"
+        hist_params.append(subject_id)
+    # stage filter intentionally omitted from history — show full record
+
+    c.execute(f"""
+        SELECT a.attempt_date, a.assessment_title,
+               COALESCE(subj.subject_name, '') AS subject_name,
+               CASE
+                   WHEN cl.class_id IS NOT NULL THEN
+                       subj.subject_name || ' ' || cl.year_group ||
+                       CASE WHEN cl.class_code IS NOT NULL AND cl.class_code != ''
+                            THEN ' (' || cl.class_code || ')' ELSE '' END
+                   ELSE 'Cross-curricular'
+               END AS class_name,
+               o.outcome_code, o.outcome_name,
+               CASE WHEN o.is_theoretical THEN 'Theoretical' ELSE 'Applied' END AS focus_type,
+               sd.score
+        FROM scoring_detail sd
+        JOIN attempt_outcomes ao ON sd.attempt_outcome_id = ao.attempt_outcome_id
+        JOIN outcomes o          ON ao.outcome_id         = o.outcome_id
+        JOIN attempts a          ON ao.attempt_id         = a.attempt_id
+        LEFT JOIN classes  cl    ON a.class_id            = cl.class_id
+        LEFT JOIN subjects subj  ON cl.subject_id         = subj.subject_id
+        WHERE a.student_id = ?{hist_extra}
+        ORDER BY a.attempt_date DESC, a.attempt_id DESC, o.outcome_code
+    """, hist_params)
+    history_rows = c.fetchall()
+
     c.execute("SELECT subject_id, subject_name FROM subjects ORDER BY subject_name")
     subjects = c.fetchall()
     c.execute("SELECT stage_name FROM stages ORDER BY stage_id")
@@ -614,6 +675,8 @@ def student_progress(student_id):
     return render_template('student_progress.html',
         student=student,
         outcome_list=outcome_list,
+        gaps=gaps,
+        history_rows=history_rows,
         subjects=subjects, stages=stages,
         current_subject_id=subject_id,
         current_stage=stage,
@@ -1447,6 +1510,73 @@ def api_outcomes():
     results = [dict(r) for r in c.fetchall()]
     conn.close()
     return jsonify(results)
+
+
+@app.route('/student/<int:student_id>/export')
+def student_export(student_id):
+    """Download the student's full assessment history as a CSV file."""
+    subject_id = request.args.get('subject_id', type=int)
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    student = c.execute("SELECT * FROM students WHERE student_id = ?", (student_id,)).fetchone()
+    if not student:
+        conn.close()
+        return "Student not found", 404
+
+    params = [student_id]
+    extra  = ""
+    if subject_id:
+        extra = " AND o.subject_id = ?"
+        params.append(subject_id)
+
+    c.execute(f"""
+        SELECT a.attempt_date, a.assessment_title,
+               COALESCE(subj.subject_name, '') AS subject_name,
+               CASE
+                   WHEN cl.class_id IS NOT NULL THEN
+                       subj.subject_name || ' ' || cl.year_group ||
+                       CASE WHEN cl.class_code IS NOT NULL AND cl.class_code != ''
+                            THEN ' (' || cl.class_code || ')' ELSE '' END
+                   ELSE 'Cross-curricular'
+               END AS class_name,
+               o.outcome_code, o.outcome_name,
+               CASE WHEN o.is_theoretical THEN 'Theoretical' ELSE 'Applied' END AS focus_type,
+               sd.score
+        FROM scoring_detail sd
+        JOIN attempt_outcomes ao ON sd.attempt_outcome_id = ao.attempt_outcome_id
+        JOIN outcomes o          ON ao.outcome_id         = o.outcome_id
+        JOIN attempts a          ON ao.attempt_id         = a.attempt_id
+        LEFT JOIN classes  cl    ON a.class_id            = cl.class_id
+        LEFT JOIN subjects subj  ON cl.subject_id         = subj.subject_id
+        WHERE a.student_id = ?{extra}
+        ORDER BY a.attempt_date, a.attempt_id, o.outcome_code
+    """, params)
+    rows = c.fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        'Date', 'Assessment Title', 'Subject', 'Class',
+        'Outcome Code', 'Outcome Description', 'Type',
+        f'Score (/{MAX_SCORE})',
+    ])
+    for row in rows:
+        writer.writerow([
+            row['attempt_date'], row['assessment_title'],
+            row['subject_name'], row['class_name'],
+            row['outcome_code'], row['outcome_name'],
+            row['focus_type'], row['score'],
+        ])
+
+    name_slug = f"{student['last_name']}_{student['first_name']}"
+    filename  = f"UDL_{name_slug}_assessment_history.csv"
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'},
+    )
 
 
 if __name__ == '__main__':

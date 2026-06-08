@@ -57,22 +57,50 @@
             font-size: 13px; color: #333; background: white;
         }
         .filter-bar select:focus { outline: none; border-color: #3498db; }
-        .filter-bar .btn-reset {
+        .btn-reset {
             padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px;
             background: white; color: #666; font-size: 13px; cursor: pointer;
             text-decoration: none;
         }
-        .filter-bar .btn-reset:hover { background: #f5f5f5; }
+        .btn-reset:hover { background: #f5f5f5; }
+        .btn-export {
+            margin-left: auto;
+            padding: 8px 16px; border-radius: 6px;
+            background: #27ae60; color: white; font-size: 13px;
+            font-weight: 600; text-decoration: none; border: none; cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-export:hover { background: #219a52; }
         .filter-badge {
             font-size: 12px; background: #e8f4fd; color: #2c5282;
             padding: 3px 10px; border-radius: 12px; font-weight: 500;
         }
 
-        /* Outcomes table */
+        /* Tabs */
+        .tab-bar {
+            display: flex; gap: 4px; margin-bottom: 0;
+        }
+        .tab-btn {
+            padding: 10px 20px; border: none; border-radius: 8px 8px 0 0;
+            background: #e2e8f0; color: #64748b; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: background 0.15s, color 0.15s;
+        }
+        .tab-btn:hover { background: #cbd5e1; }
+        .tab-btn.active { background: white; color: #2c3e50; box-shadow: 0 -1px 4px rgba(0,0,0,0.06); }
+        .tab-count {
+            display: inline-block; margin-left: 6px; padding: 1px 7px;
+            border-radius: 10px; font-size: 11px; font-weight: 700;
+            background: #e8f4fd; color: #2c5282;
+        }
+        .tab-btn.active .tab-count { background: #dbeafe; color: #1e40af; }
+        .tab-count.gap-count { background: #fef9c3; color: #854d0e; }
+        .tab-btn.active .gap-count { background: #fef3c7; color: #92400e; }
+
+        /* Shared card */
         .outcomes-card {
-            background: white; border-radius: 10px;
+            background: white; border-radius: 0 10px 10px 10px;
             box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-            overflow: hidden;
+            overflow: hidden; margin-bottom: 24px;
         }
         .outcomes-card-header {
             padding: 16px 24px; border-bottom: 1px solid #eee;
@@ -81,6 +109,7 @@
         .outcomes-card-header h3 { font-size: 15px; color: #2c3e50; font-weight: 600; }
         .outcomes-card-header .count { font-size: 13px; color: #999; }
 
+        /* Tables */
         table { width: 100%; border-collapse: collapse; }
         thead th {
             text-align: left; padding: 11px 20px;
@@ -92,7 +121,7 @@
         tbody tr:last-child td { border-bottom: none; }
         tbody tr:hover td { background: #f8f9ff; }
 
-        .code-cell { font-weight: 700; color: #2c3e50; font-size: 14px; white-space: nowrap; }
+        .code-cell { font-weight: 700; color: #2c3e50; font-size: 13px; white-space: nowrap; }
         .name-cell { color: #555; font-size: 13px; }
         .meta-cell { font-size: 12px; color: #aaa; }
 
@@ -110,6 +139,14 @@
         .band-limited    { background: #fee2e2; color: #991b1b; }
         .band-none       { background: #f3f4f6; color: #9ca3af; }
 
+        /* Gap-specific pills */
+        .gap-type-pill {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-size: 11px; font-weight: 600;
+        }
+        .gap-theoretical { background: #ede9fe; color: #5b21b6; }
+        .gap-applied     { background: #fce7f3; color: #9d174d; }
+
         /* Flag */
         .flag-cell { color: #f59e0b; font-size: 16px; cursor: help; }
 
@@ -118,6 +155,22 @@
         .trend-flat { color: #aaa; }
 
         .sparkline-cell { white-space: nowrap; }
+
+        /* History card */
+        .history-card {
+            background: white; border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            overflow: hidden; margin-bottom: 30px;
+        }
+        .history-card-header {
+            padding: 16px 24px; border-bottom: 1px solid #eee;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        }
+        .history-card-header h3 { font-size: 15px; color: #2c3e50; font-weight: 600; }
+        .score-chip {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-weight: 700; font-size: 13px; background: #f3f4f6; color: #374151;
+        }
 
         .empty-state {
             text-align: center; padding: 60px 20px; color: #999;
@@ -145,14 +198,20 @@
             <h2>Student Progress</h2>
         </div>
 
+        <!-- Student identity card -->
         <div class="student-card">
             <div class="student-avatar">{{ student.first_name[0] }}{{ student.last_name[0] }}</div>
             <div>
                 <div class="student-name">{{ student.first_name }} {{ student.last_name }}</div>
-                <div class="student-meta">Enrolled {{ student.enrollment_date }}</div>
+                <div class="student-meta">
+                    ID {{ student.student_id }}
+                    {% if student.year_group %} &middot; {{ student.year_group }}{% endif %}
+                    {% if student.enrollment_date %} &middot; Enrolled {{ student.enrollment_date }}{% endif %}
+                </div>
             </div>
         </div>
 
+        <!-- Filters + Export -->
         <form method="GET" class="filter-bar">
             <label>Subject</label>
             <select name="subject_id" onchange="this.form.submit()">
@@ -174,77 +233,216 @@
 
             {% if current_subject_id or current_stage %}
             <a href="{{ url_for('student_progress', student_id=student.student_id) }}" class="btn-reset">Clear filters</a>
-            {% for f in [current_subject_id, current_stage] if f %}
             <span class="filter-badge">Filtered</span>
-            {% endfor %}
             {% endif %}
+
+            <!-- Export CSV link — preserves current subject filter -->
+            <a href="{{ url_for('student_export', student_id=student.student_id,
+                                subject_id=current_subject_id if current_subject_id else '') }}"
+               class="btn-export">&#11015; Export raw data</a>
         </form>
 
-        <div class="outcomes-card">
-            <div class="outcomes-card-header">
-                <h3>Outcomes</h3>
-                <span class="count">{{ outcome_list | length }} outcome(s)</span>
+        <!-- ── Tab bar ──────────────────────────────────────────────────────── -->
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('assessed', this)" type="button">
+                Assessed Outcomes
+                <span class="tab-count">{{ outcome_list | length }}</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('gaps', this)" type="button">
+                Coverage Gaps
+                <span class="tab-count gap-count">{{ gaps | length }}</span>
+            </button>
+        </div>
+
+        <!-- ── Tab 1: Assessed Outcomes ─────────────────────────────────────── -->
+        <div id="tab-assessed">
+            <div class="outcomes-card">
+                <div class="outcomes-card-header">
+                    <h3>Assessed Outcomes</h3>
+                    <span class="count">{{ outcome_list | length }} outcome(s)</span>
+                </div>
+
+                <!-- Band legend -->
+                <div style="display:flex;gap:10px;flex-wrap:wrap;padding:12px 20px 0;border-top:1px solid #f0f0f0;">
+                    {% for lo, hi, label, css in bands %}
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#666;">
+                        <span class="band-pill {{ css }}" style="font-size:10px;padding:2px 7px;">{{ lo }}–{{ hi }}</span>
+                        {{ label }}
+                    </span>
+                    {% endfor %}
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#f59e0b;margin-left:auto;">
+                        ⚠ Avg vs Peak gap &gt; {{ discrepancy_threshold }} — review
+                    </span>
+                </div>
+
+                {% if outcome_list %}
+                <table style="margin-top:8px;">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Outcome</th>
+                            <th>Context</th>
+                            <th>History</th>
+                            <th class="num">Avg</th>
+                            <th class="num">Peak</th>
+                            <th>Awarded Standard</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for o in outcome_list %}
+                    <tr>
+                        <td class="code-cell">{{ o.code }}</td>
+                        <td class="name-cell">{{ o.name }}</td>
+                        <td class="meta-cell">
+                            {{ o.subjects }}{% if o.stages %} &middot; {{ o.stages }}{% endif %}
+                            {% if o.count > 1 %}
+                            <br><span style="color:#bbb;font-size:11px;">{{ o.count }} attempts &nbsp;
+                                {% if o.trend == '▲' %}<span class="trend-up">▲</span>
+                                {% elif o.trend == '▼' %}<span class="trend-down">▼</span>
+                                {% else %}<span class="trend-flat">—</span>{% endif %}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="sparkline-cell">
+                            {% if o.sparkline %}{{ o.sparkline | safe }}
+                            {% else %}<span style="color:#ddd;font-size:12px;">—</span>{% endif %}
+                        </td>
+                        <td style="text-align:right;color:#666;font-size:13px;white-space:nowrap;">{{ o.avg }}<span style="color:#ccc;font-size:11px;">/{{ max_score }}</span></td>
+                        <td style="text-align:right;font-weight:700;color:#2c3e50;white-space:nowrap;">{{ o.peak }}<span style="color:#ccc;font-size:11px;">/{{ max_score }}</span></td>
+                        <td>
+                            {% if o.band_label %}
+                            <span class="band-pill {{ o.band_css }}">{{ o.band_label }}</span>
+                            {% else %}
+                            <span class="band-pill band-none">Not assessed</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:center;width:32px;">
+                            {% if o.flagged %}
+                            <span class="flag-cell" title="Large gap between avg ({{ o.avg }}) and peak ({{ o.peak }}) — may reflect group work or assisted assessment. Awarded standard withheld pending review.">⚠</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">&#128203;</div>
+                    <p>No assessment data{% if current_subject_id or current_stage %} matching these filters{% endif %}.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Tab 2: Coverage Gaps ──────────────────────────────────────────── -->
+        <div id="tab-gaps" style="display:none">
+            <div class="outcomes-card">
+                <div class="outcomes-card-header">
+                    <h3>Coverage Gaps</h3>
+                    <span class="count">
+                        {{ gaps | length }} outcome(s) not yet assessed
+                        {% if student.year_group %}
+                        &middot; <span style="color:#aaa;">{{ student.year_group }} stage only</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                {% if gaps %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Outcome</th>
+                            <th>Subject</th>
+                            <th>Stage</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% set last_subject = namespace(name='') %}
+                    {% for g in gaps %}
+                    {% if g.subject_name != last_subject.name %}
+                    {% set last_subject.name = g.subject_name %}
+                    <tr>
+                        <td colspan="5" style="padding:10px 20px 4px;font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;background:#fafafa;border-bottom:1px solid #f0f0f0;">
+                            {{ g.subject_name }}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td class="code-cell">{{ g.outcome_code }}</td>
+                        <td class="name-cell">{{ g.outcome_name }}</td>
+                        <td class="meta-cell">{{ g.subject_name }}</td>
+                        <td class="meta-cell">{{ g.stage_name }}</td>
+                        <td>
+                            {% if g.is_theoretical %}
+                            <span class="gap-type-pill gap-theoretical">Theoretical</span>
+                            {% else %}
+                            <span class="gap-type-pill gap-applied">Applied</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">&#9989;</div>
+                    <p>
+                        {% if current_subject_id %}
+                            No gaps for this subject — all outcomes assessed!
+                        {% else %}
+                            All outcomes for this stage have been assessed.
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Raw Assessment History ────────────────────────────────────────── -->
+        <div class="history-card">
+            <div class="history-card-header">
+                <h3>&#128196; Raw Assessment History</h3>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span style="font-size:13px;color:#999;">{{ history_rows | length }} record(s){% if current_subject_id %} for selected subject{% endif %}</span>
+                    <a href="{{ url_for('student_export', student_id=student.student_id,
+                                        subject_id=current_subject_id if current_subject_id else '') }}"
+                       class="btn-export" style="font-size:12px;padding:6px 12px;">&#11015; Download CSV</a>
+                </div>
             </div>
 
-            <!-- Band legend -->
-            <div style="display:flex;gap:10px;flex-wrap:wrap;padding:12px 20px 0;border-top:1px solid #f0f0f0;">
-                {% for lo, hi, label, css in bands %}
-                <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#666;">
-                    <span class="band-pill {{ css }}" style="font-size:10px;padding:2px 7px;">{{ lo }}–{{ hi if hi < 16 else hi }}</span>
-                    {{ label }}
-                </span>
-                {% endfor %}
-                <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#f59e0b;margin-left:auto;">
-                    ⚠ Avg vs Peak gap &gt; {{ discrepancy_threshold }} — review
-                </span>
-            </div>
-
-            {% if outcome_list %}
-            <table style="margin-top:8px;">
+            {% if history_rows %}
+            <table>
                 <thead>
                     <tr>
-                        <th>Code</th>
+                        <th>Date</th>
+                        <th>Assessment</th>
+                        <th>Class</th>
+                        <th>Outcome Code</th>
                         <th>Outcome</th>
-                        <th>Context</th>
-                        <th>History</th>
-                        <th class="num">Avg</th>
-                        <th class="num">Peak</th>
-                        <th>Awarded Standard</th>
-                        <th></th>
+                        <th>Type</th>
+                        <th class="num">Score</th>
                     </tr>
                 </thead>
                 <tbody>
-                {% for o in outcome_list %}
+                {% for h in history_rows %}
                 <tr>
-                    <td class="code-cell">{{ o.code }}</td>
-                    <td class="name-cell">{{ o.name }}</td>
-                    <td class="meta-cell">
-                        {{ o.subjects }}{% if o.stages %} &middot; {{ o.stages }}{% endif %}
-                        {% if o.count > 1 %}
-                        <br><span style="color:#bbb;font-size:11px;">{{ o.count }} attempts &nbsp;
-                            {% if o.trend == '▲' %}<span class="trend-up">▲</span>
-                            {% elif o.trend == '▼' %}<span class="trend-down">▼</span>
-                            {% else %}<span class="trend-flat">—</span>{% endif %}
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td class="sparkline-cell">
-                        {% if o.sparkline %}{{ o.sparkline | safe }}
-                        {% else %}<span style="color:#ddd;font-size:12px;">—</span>{% endif %}
-                    </td>
-                    <td style="text-align:right;color:#666;font-size:13px;white-space:nowrap;">{{ o.avg }}<span style="color:#ccc;font-size:11px;">/{{ max_score }}</span></td>
-                    <td style="text-align:right;font-weight:700;color:#2c3e50;white-space:nowrap;">{{ o.peak }}<span style="color:#ccc;font-size:11px;">/{{ max_score }}</span></td>
+                    <td style="white-space:nowrap;font-size:13px;color:#555;">{{ h.attempt_date }}</td>
+                    <td style="font-size:13px;color:#2c3e50;font-weight:500;">{{ h.assessment_title }}</td>
+                    <td class="meta-cell">{{ h.class_name or '—' }}</td>
+                    <td class="code-cell">{{ h.outcome_code }}</td>
+                    <td class="name-cell" style="max-width:280px;">{{ h.outcome_name }}</td>
                     <td>
-                        {% if o.band_label %}
-                        <span class="band-pill {{ o.band_css }}">{{ o.band_label }}</span>
+                        {% if h.focus_type == 'Theoretical' %}
+                        <span class="gap-type-pill gap-theoretical">Theoretical</span>
                         {% else %}
-                        <span class="band-pill band-none">Not assessed</span>
+                        <span class="gap-type-pill gap-applied">Applied</span>
                         {% endif %}
                     </td>
-                    <td style="text-align:center;width:32px;">
-                        {% if o.flagged %}
-                        <span class="flag-cell" title="Large gap between avg ({{ o.avg }}) and peak ({{ o.peak }}) — may reflect group work or assisted assessment. Awarded standard withheld pending review.">⚠</span>
-                        {% endif %}
+                    <td style="text-align:right;">
+                        <span class="score-chip">{{ h.score }}<span style="color:#bbb;font-weight:400;font-size:11px;">/{{ max_score }}</span></span>
                     </td>
                 </tr>
                 {% endfor %}
@@ -253,10 +451,20 @@
             {% else %}
             <div class="empty-state">
                 <div class="icon">&#128203;</div>
-                <p>No assessment data{% if current_subject_id or current_stage %} matching these filters{% endif %}.</p>
+                <p>No assessment records{% if current_subject_id %} for this subject{% endif %}.</p>
             </div>
             {% endif %}
         </div>
-    </div>
+
+    </div><!-- /main-content -->
+
+    <script>
+    function switchTab(name, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-assessed').style.display = name === 'assessed' ? '' : 'none';
+        document.getElementById('tab-gaps').style.display     = name === 'gaps'     ? '' : 'none';
+    }
+    </script>
 </body>
 </html>
