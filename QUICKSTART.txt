@@ -1,0 +1,295 @@
+================================================================================
+  UDL Marks Database
+  Quick Start Guide for New Users
+================================================================================
+
+WHAT IS THIS?
+-------------
+UDL Marks Database is a tool for recording and tracking student assessment
+outcomes against UDL (Universal Design for Learning) rubric codes. It lets
+you enter marks from assessments, import results from the rubric marking tool,
+and view each student's performance across outcomes over time.
+
+All data is stored locally on this computer -- nothing is sent to the internet.
+
+
+HOW TO START THE APP
+--------------------
+1. Double-click  "Start UDL Marks DB.bat"
+2. A black command window will open -- this is normal. Leave it open.
+3. Your browser will open automatically to http://127.0.0.1:5000
+4. When you are finished, close the black command window to stop the app.
+
+If your browser does not open automatically, open it yourself and go to:
+   http://127.0.0.1:5000
+
+Note: the app only works while the command window is open. If you close it
+by accident, just double-click the .bat file again to restart.
+
+
+================================================================================
+  FIRST-TIME SETUP
+================================================================================
+
+Follow these steps in order. You only need to do this once.
+
+STEP 1 -- Add your subjects
+   Go to: Settings > Subjects
+   Click "Add Subject" and add each subject your school runs, e.g.
+     Science, Mathematics, English, PDHPE, History, Geography, Commerce, etc.
+   These are the broad subject areas -- not individual classes.
+
+STEP 2 -- Import your students
+   Go to: Settings > Students > Import from CSV
+   Prepare a CSV file with these columns:
+     student_id   -- your school's unique student ID number
+     first_name
+     last_name
+     year_group   -- e.g. "Year 9" or just "9" (both are accepted)
+
+   Example CSV:
+     student_id,first_name,last_name,year_group
+     10001,Matthew,Bailey,8
+     10002,Sarah,Chen,9
+     10003,James,Okonkwo,10
+
+   Notes:
+   - student_id is the permanent key -- it is used to match students when
+     importing marks, so it must be consistent with your other systems.
+   - You can re-import this file at any time to update names or year groups.
+     Existing assessment data is never affected.
+   - To add a single student manually: Settings > Students > Add New Student
+
+STEP 3 -- Import class enrolments
+   Go to: Settings > Classes > Import Enrolments from CSV
+   This is the most efficient way to set up your class groups. Prepare a CSV
+   with one row per student-class pairing. If a student is in 8 subjects,
+   they will have 8 rows.
+
+   Required columns:
+     student_id    -- must match the IDs from Step 2
+     subject_name  -- must match a subject from Step 1, e.g. "Science"
+     year_group    -- e.g. "Year 9" or just "9"
+     class_code    -- optional group label, e.g. "9.3" or "9SciB"
+                      leave blank if there is only one class per year/subject
+
+   Example CSV:
+     student_id,subject_name,year_group,class_code
+     10001,Science,8,8SciB
+     10001,Mathematics,8,8MA2
+     10001,English,8,8ENG1
+     10002,Science,9,9SciA
+     10002,PDHPE,9,9T
+
+   Notes:
+   - Classes that do not yet exist are created automatically.
+   - Subjects that do not yet exist are also created automatically.
+   - It is safe to re-import this file (already-enrolled students are skipped).
+   - To manage rosters manually: Settings > Classes > Roster (per class)
+
+STEP 4 -- Set up outcomes (optional at first)
+   Outcomes are created automatically the first time you import a set of marks
+   that references them. You do not need to add them manually before importing.
+
+   After importing marks, go to Settings > Outcomes to:
+   - Assign each outcome to a subject and stage
+     (required for the class heatmaps and student progress views to work)
+   - Filter by "Unassigned" to see which outcomes still need assigning
+
+   Outcome codes must match the codes used in your rubric marking tool.
+
+
+================================================================================
+  ENTERING MARKS
+================================================================================
+
+You have three ways to record assessment results:
+
+  NEW ENTRY (one student at a time)
+  ----------------------------------
+  Go to: New Entry in the top navigation bar.
+  - Select a class, then choose a student from that class
+  - Enter the assessment title and date
+  - Search for and select the outcome codes being assessed
+  - Enter a score (1-16) for each outcome
+  - Click Save
+
+  BULK ENTRY (whole class at once)
+  ---------------------------------
+  Go to: Bulk Entry in the top navigation bar.
+  - Select a class and choose which outcomes are being assessed
+  - A grid appears with all students as rows and outcomes as columns
+  - Type scores into the cells -- blank cells are skipped
+  - Submit when done
+  Best for: in-class quick recording or when you have a paper mark sheet.
+
+  IMPORT FROM CSV (from the rubric marking tool)
+  -----------------------------------------------
+  Go to: Import in the top navigation bar.
+  - Select the class and enter the assessment title and date
+  - Upload the CSV exported from the rubric marking tool
+  - The system matches students by student_id and outcomes by outcome code
+  - A summary shows which students were imported and which were skipped
+  Best for: bulk importing after using the digital rubric tool.
+
+  CSV format for import:
+    Name, Student ID, [outcome code columns], Scale Average, Comment
+  The outcome code columns should be named with the outcome code first,
+  e.g. "SC4-WS-01 Observing -- uses appropriate instruments..."
+
+
+================================================================================
+  VIEWING RESULTS
+================================================================================
+
+DASHBOARD
+  The home screen shows recent activity, a quick count of students and
+  assessments, and links to each class.
+
+ANALYTICS
+  Go to: Analytics
+  - Filter by stage, year group, or subject using the dropdowns
+  - Click a class name to open its heatmap
+  - Click a student name to open their individual progress view
+
+CLASS HEATMAP
+  Shows a grid of all students vs. all outcomes assessed for that class.
+  - Colour indicates performance band (blue = above standard, green = at
+    standard, yellow = working towards, red = limited)
+  - Toggle between Peak score and Average score using the buttons at the top
+    Peak is the default -- it reflects the student's best demonstrated ability
+  - The bottom row shows the class average for each outcome
+
+STUDENT PROGRESS
+  Three sections are available for each student:
+
+  Assessed Outcomes (tab)
+    All outcomes the student has been assessed on, showing average score,
+    peak score, performance band, and a sparkline of score history.
+    Filter by subject or stage using the dropdowns.
+
+  Coverage Gaps (tab)
+    All outcomes for the student's stage that have NOT yet been assessed.
+    Grouped by subject. Shows at a glance what still needs to be covered.
+    Filter by subject to focus on one area.
+
+  Raw Assessment History (section below tabs)
+    Every individual scored attempt, listed in reverse date order.
+    Shows: date, assessment title, class, outcome code, outcome name, score.
+    Click "Export CSV" to download the full history as a spreadsheet.
+    Useful for reporting to parents, faculty, or for audit purposes.
+
+HISTORY
+  Go to: History
+  A chronological log of every assessment entry, paginated 20 per page.
+
+
+================================================================================
+  SETTINGS REFERENCE
+================================================================================
+
+Settings > Students
+  Browse, search, and edit student records. Filter by year group.
+  Add individual students or import from CSV.
+
+Settings > Classes
+  View and manage classes. Add new classes manually or via enrolment import.
+  Each class can have a class code (e.g. 9.1, 9SciB) to distinguish
+  multiple groups in the same year and subject.
+  Click "Roster" to view or manually edit enrolments for a specific class.
+
+Settings > Subjects
+  Add new subjects. Once a subject exists, you can create classes for it.
+
+Settings > Outcomes
+  View all outcome codes in the database.
+  Assign subject and stage to each outcome (required for heatmaps).
+  Filter by "Unassigned" to find outcomes that still need to be configured.
+  The "Unassigned" badge count on this filter shows how many need attention.
+
+
+================================================================================
+  YOUR DATA AND BACKUPS
+================================================================================
+
+All data is stored in a single file:
+   udl_marks_db.sqlite   (in this folder)
+
+BACK THIS FILE UP REGULARLY.
+
+Recommended: copy the entire UDL-Marks-DB folder to a USB drive, a network
+share, or a cloud-synced folder (OneDrive, Google Drive) at the end of each
+week, or after any large data entry session.
+
+To move the database to another computer:
+   Copy the entire UDL-Marks-DB folder to the new machine and run
+   "Start UDL Marks DB.bat" there. All data will be intact.
+
+To start a fresh database:
+   Rename or move udl_marks_db.sqlite somewhere else, then start the app.
+   A new blank database will be created automatically.
+
+
+================================================================================
+  TROUBLESHOOTING
+================================================================================
+
+"The app won't start / browser doesn't open"
+   - Make sure the black command window is open (it must stay running)
+   - Try opening your browser manually and going to http://127.0.0.1:5000
+   - Check that another program isn't already using port 5000
+     (close any other running instances of the app)
+
+"Student not found when importing marks"
+   - The student_id in your marks CSV must exactly match the student_id
+     in the student database. Check for leading zeros or formatting differences.
+
+"Outcome not found when importing marks"
+   - The outcome code in the CSV must exactly match the code in the database.
+     Go to Settings > Outcomes to see what codes exist.
+     Add missing outcomes there before re-importing, or check for typos.
+
+"Year group not recognised when importing enrolments"
+   - Check that the year group in your CSV matches what is configured.
+     The system recognises "Year 7" through "Year 10" (Stages 3-5).
+     Bare numbers like "9" are also accepted and converted automatically.
+     Contact your administrator to add additional stages if needed.
+
+"Class heatmap is empty / outcomes don't show"
+   - Outcomes need a subject AND stage assigned to appear in heatmaps.
+     Go to Settings > Outcomes > Unassigned and assign the missing ones.
+
+"I accidentally entered wrong marks"
+   - There is no edit-in-place for individual scores yet.
+     Workaround: re-enter the assessment with corrected scores. The peak
+     view will show the highest score, so a correct re-entry will supersede
+     an incorrect lower one. The raw history will show both attempts.
+
+
+================================================================================
+  SCORING REFERENCE
+================================================================================
+
+Scores are entered on a 1-16 scale matching the UDL rubric bands:
+
+  16        Beyond Stage
+  13-15     Well Above Standard
+  10-12     Above Standard
+   7-9      At Standard
+   4-6      Working Towards Standard
+   1-3      Limited
+   0        Not submitted / not scored (treated as blank)
+
+The default view in class heatmaps is Peak score (the student's best result
+across all attempts at that outcome). This is intentional -- it reflects
+demonstrated ability rather than penalising students for early struggles.
+Switch to Average view using the toggle buttons on the heatmap page.
+
+
+================================================================================
+  NEED HELP?
+================================================================================
+
+Contact your IT coordinator or the developer who set up this system.
+
+================================================================================

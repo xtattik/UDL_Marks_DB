@@ -84,55 +84,7 @@ echo pause
 ) > "%DIST_DIR%\Start UDL Marks DB.bat"
 
 :: ── Quickstart guide ──────────────────────────────────────────────────────────
-(
-echo UDL Marks Database — Quick Start Guide
-echo =======================================
-echo.
-echo TO START THE APP
-echo ----------------
-echo Double-click "Start UDL Marks DB.bat"
-echo Your browser will open to http://127.0.0.1:5000 automatically.
-echo Keep the command window open — close it to stop the server.
-echo.
-echo FIRST-TIME SETUP ^(do these in order^)
-echo --------------------------------------
-echo 1. Settings ^> Subjects
-echo    Add your subjects: Science, Mathematics, English, PDHPE, etc.
-echo.
-echo 2. Settings ^> Classes
-echo    Add your class groups. Use the class code field for groups
-echo    within the same year and subject ^(e.g. 9.1, 9.2, 9T^).
-echo.
-echo 3. Settings ^> Students ^> Import from CSV
-echo    Load your student roll. CSV must have these columns:
-echo      student_id, first_name, last_name, year_group
-echo    year_group should match exactly, e.g. "Year 9"
-echo.
-echo 4. Settings ^> Classes ^> Import Enrolments from CSV
-echo    Upload a CSV with columns: student_id, subject_name, year_group, class_code
-echo    One row per student-class pairing ^(a student in 8 subjects = 8 rows^).
-echo    Missing classes and subjects are created automatically.
-echo    Or use Settings ^> Classes ^> Roster to add students one class at a time.
-echo.
-echo 5. Settings ^> Outcomes
-echo    Outcomes are created automatically when you import marks.
-echo    Use this page to assign each outcome a subject and stage
-echo    ^(required for class heatmaps and cross-curricular tracking^).
-echo.
-echo ENTERING MARKS
-echo --------------
-echo - New Entry:   one student, any outcomes, scored individually
-echo - Bulk Entry:  whole class in a grid ^(students x outcomes^)
-echo - Import:      upload a CSV exported from the rubric marking tool
-echo.
-echo YOUR DATA
-echo ---------
-echo All data is stored locally in udl_marks_db.sqlite ^(this folder^).
-echo Back this file up regularly — it is the entire database.
-echo Copying the whole folder is sufficient for a full backup.
-echo.
-echo Need help? Contact your IT coordinator or the app developer.
-) > "%DIST_DIR%\QUICKSTART.txt"
+copy /y QUICKSTART.txt "%DIST_DIR%\QUICKSTART.txt" > nul
 
 :: ── Package into ZIP ──────────────────────────────────────────────────────────
 powershell -NoProfile -Command ^
