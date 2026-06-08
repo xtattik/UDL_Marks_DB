@@ -108,8 +108,11 @@ echo    Load your student roll. CSV must have these columns:
 echo      student_id, first_name, last_name, year_group
 echo    year_group should match exactly, e.g. "Year 9"
 echo.
-echo 4. Settings ^> Classes ^> Roster
-echo    For each class, click Roster and add the enrolled students.
+echo 4. Settings ^> Classes ^> Import Enrolments from CSV
+echo    Upload a CSV with columns: student_id, subject_name, year_group, class_code
+echo    One row per student-class pairing ^(a student in 8 subjects = 8 rows^).
+echo    Missing classes and subjects are created automatically.
+echo    Or use Settings ^> Classes ^> Roster to add students one class at a time.
 echo.
 echo 5. Settings ^> Outcomes
 echo    Outcomes are created automatically when you import marks.

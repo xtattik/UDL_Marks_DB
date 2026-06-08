@@ -1512,6 +1512,127 @@ def api_outcomes():
     return jsonify(results)
 
 
+@app.route('/settings/enrollments/import', methods=['GET', 'POST'])
+def import_enrollments():
+    """
+    Bulk enroll students into classes from a CSV.
+    Expected columns: student_id, subject_name, year_group, class_code (optional)
+    One row = one student ↔ class pairing. Multiple rows per student are fine.
+    Missing classes are created automatically so the import is self-contained.
+    """
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        uploaded = request.files.get('csv_file')
+        if not uploaded:
+            conn.close()
+            return render_template('enrollment_import.html',
+                error='Please select a CSV file.')
+
+        text   = uploaded.stream.read().decode('utf-8-sig')
+        reader = csv.DictReader(io.StringIO(text))
+
+        results  = []
+        enrolled = 0
+        skipped  = 0
+        errors   = 0
+
+        for row in reader:
+            sid_raw  = (row.get('student_id') or row.get('Student ID') or '').strip()
+            subj_raw = (row.get('subject_name') or row.get('subject') or row.get('Subject') or '').strip()
+            yr_raw   = (row.get('year_group') or row.get('year') or row.get('Year Group') or row.get('Year') or '').strip()
+            code_raw = (row.get('class_code') or row.get('code') or row.get('Class Code') or '').strip() or None
+
+            # Validate required fields
+            if not sid_raw or not subj_raw or not yr_raw:
+                errors += 1
+                results.append({'label': f'{sid_raw or "?"} / {subj_raw or "?"} / {yr_raw or "?"}',
+                                 'status': 'error', 'detail': 'Missing student_id, subject_name, or year_group'})
+                continue
+
+            try:
+                student_id = int(sid_raw)
+            except ValueError:
+                errors += 1
+                results.append({'label': sid_raw, 'status': 'error',
+                                 'detail': f'Invalid student_id: {sid_raw}'})
+                continue
+
+            # Check student exists
+            stu = c.execute("SELECT first_name, last_name FROM students WHERE student_id=?",
+                            (student_id,)).fetchone()
+            if not stu:
+                errors += 1
+                results.append({'label': f'ID {student_id}', 'status': 'error',
+                                 'detail': f'Student {student_id} not found'})
+                continue
+
+            name = f"{stu['first_name']} {stu['last_name']}"
+
+            # Resolve or create subject
+            subj = c.execute("SELECT subject_id FROM subjects WHERE subject_name = ?",
+                             (subj_raw,)).fetchone()
+            if not subj:
+                c.execute("INSERT INTO subjects (subject_name) VALUES (?)", (subj_raw,))
+                subj_id = c.lastrowid
+            else:
+                subj_id = subj['subject_id']
+
+            # Resolve stage from year_group
+            stage_row = c.execute("""
+                SELECT sy.stage_id FROM stage_years sy WHERE sy.year_group = ?
+            """, (yr_raw,)).fetchone()
+            if not stage_row:
+                errors += 1
+                results.append({'label': f'{name} → {subj_raw}',
+                                 'status': 'error',
+                                 'detail': f'Year group "{yr_raw}" not recognised — check stage configuration'})
+                continue
+            stage_id = stage_row['stage_id']
+
+            # Resolve or create class
+            cls = c.execute("""
+                SELECT class_id FROM classes
+                WHERE subject_id = ? AND year_group = ?
+                  AND COALESCE(class_code,'') = COALESCE(?,'')
+            """, (subj_id, yr_raw, code_raw)).fetchone()
+            if not cls:
+                c.execute(
+                    "INSERT INTO classes (subject_id, year_group, stage_id, class_code) VALUES (?,?,?,?)",
+                    (subj_id, yr_raw, stage_id, code_raw)
+                )
+                class_id = c.lastrowid
+            else:
+                class_id = cls['class_id']
+
+            # Enroll
+            existing = c.execute(
+                "SELECT 1 FROM student_classes WHERE student_id=? AND class_id=?",
+                (student_id, class_id)
+            ).fetchone()
+            c.execute("INSERT OR IGNORE INTO student_classes (student_id, class_id) VALUES (?,?)",
+                      (student_id, class_id))
+
+            class_label = f"{subj_raw} {yr_raw}" + (f" ({code_raw})" if code_raw else "")
+            if existing:
+                skipped += 1
+                results.append({'label': f'{name} → {class_label}',
+                                 'status': 'skipped', 'detail': 'Already enrolled'})
+            else:
+                enrolled += 1
+                results.append({'label': f'{name} → {class_label}',
+                                 'status': 'ok', 'detail': 'Enrolled'})
+
+        conn.commit()
+        conn.close()
+        return render_template('enrollment_import.html',
+            results=results, enrolled=enrolled, skipped=skipped, errors=errors)
+
+    conn.close()
+    return render_template('enrollment_import.html')
+
+
 @app.route('/student/<int:student_id>/export')
 def student_export(student_id):
     """Download the student's full assessment history as a CSV file."""

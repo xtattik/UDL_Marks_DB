@@ -107,11 +107,12 @@
         <div class="settings-grid">
             <div class="settings-card" style="cursor:default">
                 <div class="card-icon">&#128218;</div>
-                <div class="card-title">Classes</div>
-                <div class="card-desc">Add and manage classes. Use class codes (e.g. 9.1, 9.2) to distinguish multiple classes in the same year and subject.</div>
+                <div class="card-title">Classes &amp; Enrolments</div>
+                <div class="card-desc">Add and manage classes. Use class codes (e.g. 9.1, 9.2) to distinguish multiple classes in the same year and subject. Bulk-import enrolments from a CSV to assign hundreds of students to classes in one step.</div>
                 <div class="card-badge">{{ class_count }} class{{ 'es' if class_count != 1 }}</div>
                 <div class="sub-links">
                     <a href="{{ url_for('manage_classes') }}" class="sub-link">Manage Classes &rarr;</a>
+                    <a href="{{ url_for('import_enrollments') }}" class="sub-link">&#11015; Import Enrolments from CSV &rarr;</a>
                 </div>
             </div>
             <div class="settings-card" style="cursor:default">

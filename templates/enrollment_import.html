@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Enrolments — UDL Marks Database</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #333; }
+
+        .navbar {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white; padding: 0 30px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 60px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .navbar h1 { font-size: 20px; font-weight: 600; }
+        .navbar nav a {
+            color: rgba(255,255,255,0.8); text-decoration: none;
+            margin-left: 24px; font-size: 14px; font-weight: 500;
+        }
+        .navbar nav a:hover, .navbar nav a.active { color: white; }
+
+        .main-content { max-width: 860px; margin: 30px auto; padding: 0 20px; }
+        .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .page-header h2 { font-size: 22px; color: #2c3e50; }
+        .back-link { color: #3498db; text-decoration: none; font-size: 14px; font-weight: 500; }
+        .back-link:hover { text-decoration: underline; }
+
+        .card {
+            background: white; border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            padding: 28px; margin-bottom: 24px;
+        }
+        .card h3 { font-size: 16px; color: #2c3e50; margin-bottom: 16px; font-weight: 600; }
+
+        /* Drop zone */
+        .drop-zone {
+            border: 2px dashed #b0c4de; border-radius: 8px;
+            padding: 40px 20px; text-align: center; cursor: pointer;
+            transition: border-color 0.2s, background 0.2s; background: #f8faff;
+        }
+        .drop-zone.drag-over { border-color: #3498db; background: #eaf4fb; }
+        .drop-zone .icon { font-size: 36px; margin-bottom: 10px; }
+        .drop-zone p { font-size: 14px; color: #888; }
+        .drop-zone strong { color: #3498db; }
+        #csv_file { display: none; }
+
+        .btn {
+            display: inline-block; padding: 10px 22px; border-radius: 6px;
+            font-size: 14px; font-weight: 600; cursor: pointer; border: none;
+        }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+
+        /* Format guide */
+        .format-box {
+            background: #f8f9ff; border: 1px solid #e0e8f0; border-radius: 8px;
+            padding: 16px 20px; margin-top: 20px;
+        }
+        .format-box h4 { font-size: 13px; font-weight: 700; color: #2c3e50; margin-bottom: 10px; }
+        .format-box p { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 8px; }
+        .format-box ul { font-size: 13px; color: #666; padding-left: 20px; line-height: 1.8; }
+        .format-box code {
+            background: #eef2ff; color: #3730a3; padding: 1px 5px;
+            border-radius: 3px; font-size: 12px;
+        }
+
+        /* Example table */
+        .example-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        .example-table th {
+            background: #2c3e50; color: white; padding: 6px 10px;
+            text-align: left; font-weight: 600;
+        }
+        .example-table td { padding: 6px 10px; border-bottom: 1px solid #eee; color: #555; }
+        .example-table tr:last-child td { border-bottom: none; }
+        .example-table tr:nth-child(even) td { background: #f9f9ff; }
+
+        /* Error alert */
+        .alert-error {
+            background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
+            padding: 14px 18px; color: #991b1b; font-size: 14px; margin-bottom: 20px;
+        }
+
+        /* Summary bar */
+        .summary-bar {
+            display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;
+        }
+        .summary-chip {
+            padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
+        }
+        .chip-ok      { background: #dcfce7; color: #166534; }
+        .chip-skip    { background: #fef9c3; color: #854d0e; }
+        .chip-error   { background: #fee2e2; color: #991b1b; }
+
+        /* Results table */
+        .results-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .results-table th {
+            text-align: left; padding: 9px 16px;
+            font-size: 11px; color: #888; text-transform: uppercase;
+            letter-spacing: 0.5px; background: #fafafa; border-bottom: 1px solid #eee;
+        }
+        .results-table td { padding: 10px 16px; border-bottom: 1px solid #f5f5f5; }
+        .results-table tr:last-child td { border-bottom: none; }
+
+        .status-ok    { color: #16a34a; font-weight: 600; }
+        .status-skip  { color: #d97706; font-weight: 600; }
+        .status-error { color: #dc2626; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>UDL Marks Database</h1>
+        <nav>
+            <a href="{{ url_for('index') }}">Dashboard</a>
+            <a href="{{ url_for('marks_entry') }}">New Entry</a>
+            <a href="{{ url_for('bulk_entry') }}">Bulk Entry</a>
+            <a href="{{ url_for('import_marks') }}">Import</a>
+            <a href="{{ url_for('recent_entries') }}">History</a>
+            <a href="{{ url_for('analytics') }}">Analytics</a>
+            <a href="{{ url_for('settings') }}" class="active">Settings</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <a href="{{ url_for('settings') }}" class="back-link">&larr; Settings</a>
+            <h2>Import Enrolments</h2>
+        </div>
+
+        {% if error %}
+        <div class="alert-error">{{ error }}</div>
+        {% endif %}
+
+        {% if results is defined %}
+        <!-- ── Results ── -->
+        <div class="card">
+            <h3>Import Results</h3>
+            <div class="summary-bar">
+                <span class="summary-chip chip-ok">&#10003; {{ enrolled }} enrolled</span>
+                <span class="summary-chip chip-skip">&#8594; {{ skipped }} already enrolled (skipped)</span>
+                {% if errors %}<span class="summary-chip chip-error">&#10007; {{ errors }} errors</span>{% endif %}
+            </div>
+            <table class="results-table">
+                <thead>
+                    <tr><th>Student → Class</th><th>Result</th><th>Detail</th></tr>
+                </thead>
+                <tbody>
+                {% for r in results %}
+                <tr>
+                    <td>{{ r.label }}</td>
+                    <td>
+                        {% if r.status == 'ok' %}<span class="status-ok">Enrolled</span>
+                        {% elif r.status == 'skipped' %}<span class="status-skip">Skipped</span>
+                        {% else %}<span class="status-error">Error</span>{% endif %}
+                    </td>
+                    <td style="color:#888;">{{ r.detail }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <p style="margin-bottom:20px;">
+            <a href="{{ url_for('import_enrollments') }}" class="btn btn-primary">Import another file</a>
+            &nbsp;
+            <a href="{{ url_for('settings') }}" class="back-link">Back to Settings</a>
+        </p>
+
+        {% else %}
+        <!-- ── Upload form ── -->
+        <div class="card">
+            <h3>Upload Enrolment CSV</h3>
+
+            <form method="POST" enctype="multipart/form-data" id="upload-form">
+                <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv_file').click()">
+                    <div class="icon">&#128196;</div>
+                    <p><strong>Click to choose a CSV file</strong> or drag and drop it here</p>
+                    <p id="file-name" style="margin-top:8px;color:#3498db;font-weight:600;display:none"></p>
+                </div>
+                <input type="file" name="csv_file" id="csv_file" accept=".csv">
+
+                <div style="margin-top:20px; display:flex; gap:12px; align-items:center;">
+                    <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
+                        Import Enrolments
+                    </button>
+                    <span style="font-size:13px;color:#aaa;" id="ready-hint">Select a file to continue</span>
+                </div>
+            </form>
+
+            <div class="format-box">
+                <h4>CSV Format</h4>
+                <p>One row per student–class pairing. A student enrolled in 8 subjects will have 8 rows.</p>
+                <ul>
+                    <li><code>student_id</code> — must match an existing student record</li>
+                    <li><code>subject_name</code> — e.g. <code>Science</code>, <code>PDHPE</code>. Created automatically if new.</li>
+                    <li><code>year_group</code> — must match a configured year group, e.g. <code>Year 9</code></li>
+                    <li><code>class_code</code> — optional group label, e.g. <code>9.3</code>, <code>9T</code>. Leave blank for whole-year classes.</li>
+                </ul>
+
+                <table class="example-table" style="margin-top:14px;">
+                    <thead>
+                        <tr>
+                            <th>student_id</th><th>subject_name</th><th>year_group</th><th>class_code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>10001</td><td>Science</td><td>Year 9</td><td>9.3</td></tr>
+                        <tr><td>10001</td><td>PDHPE</td><td>Year 9</td><td>9T</td></tr>
+                        <tr><td>10001</td><td>Mathematics</td><td>Year 9</td><td>9.2</td></tr>
+                        <tr><td>10002</td><td>Science</td><td>Year 9</td><td>9.3</td></tr>
+                        <tr><td>10002</td><td>PDHPE</td><td>Year 9</td><td>9T</td></tr>
+                    </tbody>
+                </table>
+
+                <p style="margin-top:12px;color:#aaa;font-size:12px;">
+                    Missing classes are created automatically. Re-importing the same file is safe — existing enrolments are skipped.
+                    Subjects not yet in the database are added automatically.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+    const dropZone  = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('csv_file');
+    const submitBtn = document.getElementById('submit-btn');
+    const fileNameEl = document.getElementById('file-name');
+    const readyHint  = document.getElementById('ready-hint');
+
+    function setFile(file) {
+        if (!file) return;
+        fileNameEl.textContent = file.name;
+        fileNameEl.style.display = 'block';
+        submitBtn.disabled = false;
+        readyHint.textContent = '';
+    }
+
+    fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+            setFile(file);
+        }
+    });
+    </script>
+</body>
+</html>
