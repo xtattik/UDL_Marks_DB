@@ -1206,7 +1206,10 @@ def import_students():
             id_raw     = (row.get('student_id') or row.get('Student ID') or '').strip()
             first_name = (row.get('first_name') or row.get('First Name') or '').strip()
             last_name  = (row.get('last_name')  or row.get('Last Name')  or row.get('Surname') or '').strip()
-            year_group = (row.get('year_group') or row.get('Year Group') or row.get('Year') or '').strip() or None
+            year_group = (row.get('year_group') or row.get('Year Group') or row.get('Year') or '').strip()
+            if year_group and year_group.isdigit():
+                year_group = f"Year {year_group}"
+            year_group = year_group or None
 
             if not id_raw or not first_name or not last_name:
                 skipped += 1
@@ -1542,6 +1545,9 @@ def import_enrollments():
             sid_raw  = (row.get('student_id') or row.get('Student ID') or '').strip()
             subj_raw = (row.get('subject_name') or row.get('subject') or row.get('Subject') or '').strip()
             yr_raw   = (row.get('year_group') or row.get('year') or row.get('Year Group') or row.get('Year') or '').strip()
+            # Normalise bare numbers: "8" → "Year 8", "10" → "Year 10"
+            if yr_raw.isdigit():
+                yr_raw = f"Year {yr_raw}"
             code_raw = (row.get('class_code') or row.get('code') or row.get('Class Code') or '').strip() or None
 
             # Validate required fields
