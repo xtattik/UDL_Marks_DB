@@ -53,8 +53,6 @@
         .code { font-family: monospace; font-weight: 700; color: #2c3e50; font-size: 13px; }
         .name { color: #555; font-size: 12px; max-width: 280px; }
         .badge { display: inline-block; padding: 2px 7px; border-radius: 8px; font-size: 11px; font-weight: 600; }
-        .badge-theory  { background: #fef3cd; color: #856404; }
-        .badge-applied { background: #d4edda; color: #155724; }
         .badge-warn    { background: #f8d7da; color: #721c24; }
 
         /* Inline assignment form */
@@ -163,9 +161,6 @@
                                 <td class="code">{{ o.outcome_code }}</td>
                                 <td class="name">{{ o.outcome_name }}</td>
                                 <td>
-                                    <span class="badge {{ 'badge-theory' if o.is_theoretical else 'badge-applied' }}">
-                                        {{ 'Theoretical' if o.is_theoretical else 'Applied' }}
-                                    </span>
                                     {% if unassigned %}<span class="badge badge-warn" title="No subject or stage set">Unassigned</span>{% endif %}
                                 </td>
                                 <td>

@@ -314,7 +314,6 @@
                 <div class="outcome-option" data-id="${o.id}">
                     <div class="opt-code">${escHtml(o.code)}</div>
                     <div class="opt-desc">${escHtml(o.description.length > 60 ? o.description.substring(0,60)+'…' : o.description)}</div>
-                    <div class="opt-meta">${escHtml(o.focus_type || '')}</div>
                 </div>`).join('');
             dropdown.querySelectorAll('.outcome-option').forEach(el =>
                 el.addEventListener('click', () => {

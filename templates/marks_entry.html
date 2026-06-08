@@ -102,14 +102,6 @@
         .scoring-block-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
         .scoring-block-header .outcome-info .code { font-size: 16px; font-weight: 700; color: #2c3e50; }
         .scoring-block-header .outcome-info .desc { font-size: 13px; color: #666; margin-top: 4px; }
-        .focus-badge {
-            display: inline-block; padding: 2px 8px; border-radius: 10px;
-            font-size: 11px; font-weight: 600; margin-top: 6px;
-        }
-        .focus-badge.theoretical { background: #fef3cd; color: #856404; }
-        .focus-badge.applied { background: #d4edda; color: #155724; }
-        .focus-badge.general { background: #e2e3e5; color: #383d41; }
-
         .score-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
         .score-row label { margin: 0; font-size: 13px; color: #555; white-space: nowrap; }
         .score-row input[type="number"] {
@@ -341,8 +333,7 @@
             if (activeStageId && o.stage_id && o.stage_id !== activeStageId) return false;
             if (!q) return true;
             return o.code.toLowerCase().includes(q) ||
-                   o.description.toLowerCase().includes(q) ||
-                   (o.focus_type || '').toLowerCase().includes(q);
+                   o.description.toLowerCase().includes(q);
         });
     }
 
@@ -352,10 +343,9 @@
         } else {
             dropdown.innerHTML = list.map(o => `
                 <div class="outcome-option" data-id="${o.id}" data-code="${escHtml(o.code)}"
-                     data-desc="${escHtml(o.description)}" data-focus="${escHtml(o.focus_type || '')}">
+                     data-desc="${escHtml(o.description)}">
                     <div class="opt-code">${highlight(escHtml(o.code), query)}</div>
                     <div class="opt-desc">${highlight(escHtml(o.description), query)}</div>
-                    <div class="opt-meta">${escHtml(o.focus_type || '')}</div>
                 </div>`).join('');
             dropdown.querySelectorAll('.outcome-option').forEach(el =>
                 el.addEventListener('click', () => addOutcome(el))
@@ -404,15 +394,12 @@
             </div>`).join('');
 
         scoringWrap.innerHTML = selected.map(o => {
-            const fc = (o.focus_type || '').toLowerCase().includes('theoretical') ? 'theoretical'
-                     : (o.focus_type || '').toLowerCase().includes('applied') ? 'applied' : 'general';
             return `
             <div class="form-card scoring-block" data-outcome-id="${o.id}">
                 <div class="scoring-block-header">
                     <div class="outcome-info">
                         <div class="code">${escHtml(o.code)}</div>
                         <div class="desc">${escHtml(o.description)}</div>
-                        <span class="focus-badge ${fc}">${escHtml(o.focus_type || 'General')}</span>
                     </div>
                 </div>
                 <div class="score-row">

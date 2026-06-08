@@ -139,13 +139,7 @@
         .band-limited    { background: #fee2e2; color: #991b1b; }
         .band-none       { background: #f3f4f6; color: #9ca3af; }
 
-        /* Gap-specific pills */
-        .gap-type-pill {
-            display: inline-block; padding: 2px 8px; border-radius: 10px;
-            font-size: 11px; font-weight: 600;
-        }
-        .gap-theoretical { background: #ede9fe; color: #5b21b6; }
-        .gap-applied     { background: #fce7f3; color: #9d174d; }
+
 
         /* Flag */
         .flag-cell { color: #f59e0b; font-size: 16px; cursor: help; }
@@ -356,7 +350,6 @@
                             <th>Outcome</th>
                             <th>Subject</th>
                             <th>Stage</th>
-                            <th>Type</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -365,7 +358,7 @@
                     {% if g.subject_name != last_subject.name %}
                     {% set last_subject.name = g.subject_name %}
                     <tr>
-                        <td colspan="5" style="padding:10px 20px 4px;font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;background:#fafafa;border-bottom:1px solid #f0f0f0;">
+                        <td colspan="4" style="padding:10px 20px 4px;font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;background:#fafafa;border-bottom:1px solid #f0f0f0;">
                             {{ g.subject_name }}
                         </td>
                     </tr>
@@ -375,13 +368,6 @@
                         <td class="name-cell">{{ g.outcome_name }}</td>
                         <td class="meta-cell">{{ g.subject_name }}</td>
                         <td class="meta-cell">{{ g.stage_name }}</td>
-                        <td>
-                            {% if g.is_theoretical %}
-                            <span class="gap-type-pill gap-theoretical">Theoretical</span>
-                            {% else %}
-                            <span class="gap-type-pill gap-applied">Applied</span>
-                            {% endif %}
-                        </td>
                     </tr>
                     {% endfor %}
                     </tbody>
@@ -422,7 +408,6 @@
                         <th>Class</th>
                         <th>Outcome Code</th>
                         <th>Outcome</th>
-                        <th>Type</th>
                         <th class="num">Score</th>
                     </tr>
                 </thead>
@@ -434,13 +419,6 @@
                     <td class="meta-cell">{{ h.class_name or '—' }}</td>
                     <td class="code-cell">{{ h.outcome_code }}</td>
                     <td class="name-cell" style="max-width:280px;">{{ h.outcome_name }}</td>
-                    <td>
-                        {% if h.focus_type == 'Theoretical' %}
-                        <span class="gap-type-pill gap-theoretical">Theoretical</span>
-                        {% else %}
-                        <span class="gap-type-pill gap-applied">Applied</span>
-                        {% endif %}
-                    </td>
                     <td style="text-align:right;">
                         <span class="score-chip">{{ h.score }}<span style="color:#bbb;font-weight:400;font-size:11px;">/{{ max_score }}</span></span>
                     </td>
