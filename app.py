@@ -1,5 +1,6 @@
 import csv
 import io
+import os
 import sqlite3
 from collections import defaultdict
 from datetime import date
@@ -1709,4 +1710,4 @@ def student_export(student_id):
 if __name__ == '__main__':
     init_db()
     seed_db()
-    app.run(debug=True)
+    app.run(debug=os.environ.get("UDL_DEBUG") == "1")

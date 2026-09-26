@@ -10,3 +10,6 @@ venv/
 dist/
 *-release.zip
 .frontend-slides/
+.smallcode/
+.code-graph/
+.memory/
